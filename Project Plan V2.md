@@ -1,4 +1,5 @@
 # Iter Viae Project Plan | Version 2
+Updated: June 1, 2026
 
 ## 📋 High-Level Overview
 
