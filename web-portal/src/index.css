@@ -1,1 +1,11 @@
 @import "tailwindcss";
+
+@plugin "@tailwindcss/typography";
+
+@theme {
+  --color-bg: #121212;  /* Main UI background*/
+  --color-sec: #303030;  /* Card surfaces, navigation bars*/
+  --color-text: #F8F9FF;  /* Main UI background*/
+  --font-main: 'Roboto Condensed', sans-serif;
+
+}

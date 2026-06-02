@@ -1,9 +1,18 @@
 import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import Welcome from './assets/Welcome';
 
 function App() {
+  
+  
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      <h1>Iter Viae</h1>
+    <div className='bg-bg h-screen w-screen flex flex-col items-center justify-center font-main pt-5 text-text'>
+      <Router>
+        <Routes>
+          <Route path='/' element={<Welcome />} />
+        </Routes>
+      </Router>
+
     </div>
   );
 }
