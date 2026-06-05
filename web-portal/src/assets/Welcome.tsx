@@ -50,16 +50,10 @@ function Welcome() {
 
   return (
     <div className="bg-sec w-[50%] p-5 rounded-xl h-fit flex flex-col justify-between overflow-y-auto border border-zinc-800 shadow-2xl">
+      <img src="/Banner.svg" alt="Logo" className="w-full h-auto mx-auto" />
       <div className="space-y-4">
-        {/* Dynamic Main App Heading */}
-        <h1 className="text-center text-4xl font-black tracking-tight text-[#F8F9FF] uppercase">
-          {content?.title || "Iter Viae"}
-        </h1>
 
-        {/* Dynamic Secondary Subheading & App Release Version */}
-        <h2 className="text-center text-xl font-bold text-red-500 uppercase tracking-wide">
-          {content?.sub_title || "The Way of the Road"} {content?.version ? `Version ${content.version}` : "Version 2.1.0"}
-        </h2>
+
 
         {/* Dynamic WYSIWYG Write-up Text Field (Fenced safely via prose-invert for Tailwind) */}
         {content?.wright_up ? (
