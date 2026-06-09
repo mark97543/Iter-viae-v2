@@ -1,11 +1,23 @@
 import {useEffect, useState} from 'react';
 import BlogModal from './BlogModal.tsx';
 
+interface Post {
+  id: number;
+  title: string;
+  category: string;
+  date_created: string;
+  short_summary: string;
+  status: string;
+  phase: string;
+  name: string;
+  description: string;
+}
+
 
 function Blog() {
 
 
-    const [blogPosts, setBlogPosts]=useState([]);
+    const [blogPosts, setBlogPosts]=useState<Post[]>([]);
     const [loading, setLoading]=useState(true);
     const [milestones, setMilestones]=useState([]);
     const [selectedPost, setSelectedPost]=useState(null);

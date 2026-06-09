@@ -1,3 +1,9 @@
+interface ModalProps {
+  onClose: () => void;
+  activePost: any; // Or better, use the 'Post' interface we defined above
+}
+
+
 function BlogModal ({onClose, activePost}) {
     
     if (activePost===null) return null;
