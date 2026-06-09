@@ -4,7 +4,7 @@ interface ModalProps {
 }
 
 
-function BlogModal ({onClose, activePost}) {
+function BlogModal ({onClose, activePost}: ModalProps) {
     
     if (activePost===null) return null;
     
