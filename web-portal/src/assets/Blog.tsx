@@ -1,4 +1,5 @@
 import {useEffect, useState} from 'react';
+import BlogModal from './BlogModal.tsx';
 
 
 function Blog() {
@@ -7,6 +8,12 @@ function Blog() {
     const [blogPosts, setBlogPosts]=useState([]);
     const [loading, setLoading]=useState(true);
     const [milestones, setMilestones]=useState([]);
+    const [selectedPost, setSelectedPost]=useState(null);
+
+    const closeModal = () => {
+        setSelectedPost(null);
+    }
+
 
     useEffect(()=>{
         const syncBlog = async () => {
@@ -68,10 +75,10 @@ function Blog() {
           <h2 className="text-sm font-mono tracking-widest text-neutral-500 uppercase">// CHOP FEED LOGS</h2>
           
           {blogPosts.map((post) => (
-            <div key={post.id} className="bg-neutral-900 border border-neutral-800 p-6 rounded-sm shadow-md">
+            <div key={post.id} className="bg-neutral-900 border border-neutral-800 p-6 rounded-sm shadow-md cursor-pointer hover:scale-[1.02] transition-transform duration-100" onClick={()=>{setSelectedPost(post);}}>
               <span className="text-xs font-mono text-red-500 uppercase tracking-wider">{post.category}</span>
               <h3 className="text-xl font-bold mt-1 text-neutral-100">{post.title}</h3>
-              <p className="text-xs font-mono text-neutral-500 mt-1">Logged: {post.date}</p>
+              <p className="text-xs font-mono text-neutral-500 mt-1">Logged: {new Date(post.date_created).toLocaleDateString()}</p>
               <p className="text-sm text-neutral-400 mt-4 leading-relaxed whitespace-pre-line">{post.short_summary}</p>
             </div>
           ))}
@@ -122,6 +129,11 @@ function Blog() {
         </div>
 
       </div>
+
+      <BlogModal 
+        onClose={closeModal} 
+        activePost={selectedPost}
+      />
     </div>
   );
 }
