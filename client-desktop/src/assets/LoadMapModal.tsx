@@ -3,7 +3,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 
 // ==========================================
-// 1. TYPE DEFINITIONS & DATA CONTRACTS
+// TYPE DEFINITIONS & DATA CONTRACTS
 // ==========================================
 
 // Props for opening/closing the modal from the parent app
@@ -41,12 +41,12 @@ interface DirectusResponse {
 
 
 // ==========================================
-// 2. INDIVIDUAL MAP ROW COMPONENT
+// INDIVIDUAL MAP ROW COMPONENT
 // ==========================================
 // By isolating each row into its own component, we ensure that when one map 
 // is downloading, only THIS row re-renders, preventing the whole table from lagging.
 
-function MapRow({ map }: { map: MapRegion }) {
+function MapRow({ map, onDownloadStart, onDownloadEnd }:{map:MapRegion; onDownloadStart: () => void; onDownloadEnd: () => void;}) {
     // State machine for the row's lifecycle
     const [status, setStatus] = useState<"DOWNLOAD" | "UPDATE" | "READY" | "DOWNLOADING">("DOWNLOAD");
     
@@ -72,6 +72,7 @@ function MapRow({ map }: { map: MapRegion }) {
                 // If it hits 100%, automatically switch the UI to "READY"
                 if (event.payload.percentage >= 100) {
                     setStatus("READY");
+                    onDownloadEnd();
                 }
             }
         });
@@ -106,7 +107,10 @@ function MapRow({ map }: { map: MapRegion }) {
     // This is triggered when the user clicks the Download, Update, or Delete buttons
     const handleAction = async (action: "DOWNLOAD" | "UPDATE" | "DELETE") => {
         // Immediately trigger the downloading UI state (Optimistic UI update)
-        if (action !== "DELETE") setStatus("DOWNLOADING");
+        if (action !== "DELETE") {
+            setStatus("DOWNLOADING");
+            onDownloadStart();
+        }
         setProgress(0); // Reset progress bar
 
         try {
@@ -194,14 +198,16 @@ function MapRow({ map }: { map: MapRegion }) {
     );
 }
 
+
 // ==========================================
-// 3. MAIN MODAL CONTAINER
+// MAIN MODAL CONTAINER
 // ==========================================
 
 export default function LoadMapModal({ onClose }: ModalProps) {
     // Stores the master list of all available maps from Directus
     const [mapData, setMapData] = useState<MapRegion[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [activeDownloads, setActiveDownloads]=useState(0);
 
     // Fetch the directory from your cloud API when the modal opens
     useEffect(() => {
@@ -234,7 +240,7 @@ export default function LoadMapModal({ onClose }: ModalProps) {
                         <p className="text-gray-400 text-sm mt-1">Download regions for offline GPS navigation.</p>
                     </div>
                     {/* Top Right subtle close button */}
-                    <button onClick={onClose} className="text-gray-500 hover:text-white transition-colors">
+                    <button onClick={onClose} disabled={activeDownloads > 0} className="text-gray-500 hover:text-white transition-colors">
                         ✕ Close
                     </button>
                 </div>
@@ -259,7 +265,12 @@ export default function LoadMapModal({ onClose }: ModalProps) {
                             <tbody>
                                 {/* Render a dedicated, self-managing row for every map */}
                                 {mapData.map((map) => (
-                                    <MapRow key={map.id} map={map} />
+                                    <MapRow 
+                                        key={map.id} 
+                                        map={map} 
+                                        onDownloadStart={() => setActiveDownloads(prev => prev + 1)}
+                                        onDownloadEnd={() => setActiveDownloads(prev => prev - 1)}
+                                    />
                                 ))}
                             </tbody>
                         </table>
@@ -271,11 +282,15 @@ export default function LoadMapModal({ onClose }: ModalProps) {
                     <button 
                         className='px-8 py-2.5 bg-neutral-800 hover:bg-neutral-700 text-white rounded-lg cursor-pointer font-bold tracking-wide transition-colors border border-neutral-700' 
                         onClick={onClose}
+                        disabled={activeDownloads>0}
                     >
-                        Return to Cockpit
+                        {activeDownloads > 0 ? "Wait For Downloads" : "Return to Cockpit"}
                     </button>
                 </div>
             </div>
         </div>
     );
 }
+
+//TODO: Add a total Diskspace tot he modal
+//TODO: Add a search feature to the modal. 
