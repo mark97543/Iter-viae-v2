@@ -1,10 +1,9 @@
-use tauri::{
-    Emitter, Manager,
-};
-use crate::menu::create_menu;
+use tauri::{Manager, Emitter}; 
+use crate::menu::create_menu; // Ensure menu.rs has 'pub fn create_menu'
 
-mod menu;
-mod maptile;
+pub mod menu;
+pub mod maptile;
+pub mod tile_server;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -18,15 +17,25 @@ pub fn run() {
             maptile::delete_map
         ])
         .setup(|app| {
+            // 1. Attach the menu
             app.set_menu(create_menu(app.handle())?)?;
+            
+            // 2. Initialize Tile Server
+            if let Ok(mut maps_dir) = app.path().app_data_dir() {
+                maps_dir.push("maps");
+                let _ = std::fs::create_dir_all(&maps_dir);
+                tile_server::spawn_server(maps_dir);
+            }
+            
             Ok(())
         })
         .on_menu_event(|app_handle, event| {
             match event.id().as_ref() {
                 "quit" => app_handle.exit(0),
                 "debug" => {
+                    // This assumes your window label is "main" (Tauri default)
                     if let Some(window) = app_handle.get_webview_window("main") {
-                        window.open_devtools();
+                        let _ = window.open_devtools();
                     }
                 }
                 "loadMap" => {

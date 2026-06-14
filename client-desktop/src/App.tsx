@@ -1,6 +1,7 @@
 import {listen} from '@tauri-apps/api/event';
 import {useEffect, useState} from 'react';
 import LoadMapModal from './assets/LoadMapModal.tsx';
+import TacticalMap from './assets/Map/TacticalMap.tsx'
 
 
 
@@ -24,7 +25,7 @@ function App() {
 
   return (
     <div className="bg-canvas-panel text-ui-text h-screen w-screen overflow-hidden">
-      <h1>Hello World!</h1>
+      <TacticalMap/>
       {loadMapModalOpen && <LoadMapModal onClose={closeMapModal}/>}
     </div>
     
