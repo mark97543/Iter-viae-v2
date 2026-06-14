@@ -3,15 +3,37 @@ import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { LAYER_REGISTRY } from './LayerRegistry';
 import { invoke } from '@tauri-apps/api/core';
+import { listen } from '@tauri-apps/api/event';
 
 function TacticalMap() {
     const mapContainer = useRef<HTMLDivElement>(null);
     const [mapFiles, setMapFiles] = useState<string[]>([]);
 
+    // Fetch maps with event-driven refresh
     useEffect(() => {
-        invoke<string[]>('get_local_maps')
-            .then(setMapFiles)
-            .catch(err => console.error("Failed to load map list:", err));
+        const fetchMaps = async () => {
+            try {
+                const files = await invoke<string[]>('get_local_maps');
+                console.log("TacticalMap updated mapFiles list:", files);
+                setMapFiles(files);
+            } catch (err) {
+                console.error("Failed to load map list:", err);
+            }
+        };
+
+        // Initial load
+        fetchMaps();
+
+        // Listen for the event globally
+        const unlisten = listen('map-downloaded', () => {
+            console.log("TacticalMap heard 'map-downloaded'! Refreshing...");
+            fetchMaps();
+        });
+
+        // Cleanup on unmount
+        return () => {
+            unlisten.then((f) => f());
+        };
     }, []);
 
     useEffect(() => {
@@ -26,7 +48,7 @@ function TacticalMap() {
             },
             center: [-114.0, 44.0],
             zoom: 6,
-            minZoom: 15,  
+            minZoom: 0,  
             maxZoom: 15.9  
         });
 

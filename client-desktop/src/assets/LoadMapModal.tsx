@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { listen } from '@tauri-apps/api/event';
+import { listen, emit } from '@tauri-apps/api/event';
 
 // ==========================================
 // TYPE DEFINITIONS & DATA CONTRACTS
@@ -125,11 +125,18 @@ function MapRow({ map, onDownloadStart, onDownloadEnd }:{map:MapRegion; onDownlo
                 await invoke("delete_map", { fileName });
                 // Reset UI back to download state
                 setStatus("DOWNLOAD");
+                await emit('map-downloaded');
             } 
             else {
                 // Standard initial download
                 await invoke("download_map", { url: map.file_url });
             }
+
+            //Emit the event when the process finishes successfully
+            if (action !== "DELETE") {
+                await emit('map-downloaded');
+            }
+
         } catch (e) {
             console.error("Action failed:", e);
             setStatus("DOWNLOAD"); // Revert UI if the Rust command failed
