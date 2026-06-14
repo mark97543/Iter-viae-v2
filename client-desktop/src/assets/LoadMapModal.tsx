@@ -294,3 +294,4 @@ export default function LoadMapModal({ onClose }: ModalProps) {
 
 //TODO: Add a total Diskspace tot he modal
 //TODO: Add a search feature to the modal. 
+//TODO: Need to have the map refresh when the user downloads a map

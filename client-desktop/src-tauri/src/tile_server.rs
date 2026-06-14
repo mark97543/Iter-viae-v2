@@ -1,3 +1,4 @@
+//tile_server.rs
 use axum::{
     extract::{Path, State},
     http::{header, StatusCode},
@@ -46,55 +47,42 @@ async fn serve_tile(
     Path((region, z, x, y)): Path<(String, u32, u32, u32)>,
 ) -> impl IntoResponse {
     
-    // Step A: Find the map file for this region (e.g., looking for "idaho-*.mbtiles")
-    let mut target_db: Option<PathBuf> = None;
-    if let Ok(entries) = fs::read_dir(&state.maps_dir) {
-        for entry in entries.filter_map(|e| e.ok()) {
-            let file_name = entry.file_name().into_string().unwrap_or_default();
-            if file_name.starts_with(&format!("{}-", region)) && file_name.ends_with(".mbtiles") {
-                target_db = Some(entry.path());
-                break;
-            }
-        }
+    // 1. Direct path resolution. React passes "idaho-260611", we look for "idaho-260611.mbtiles"
+    let db_path = state.maps_dir.join(format!("{}.mbtiles", region));
+
+    if !db_path.exists() {
+        // If you see this in the terminal, the file is in the wrong folder!
+        println!("❌ 404: Cannot find database file at {:?}", db_path);
+        return (StatusCode::NOT_FOUND, "Region not found on disk").into_response();
     }
 
-    let db_path = match target_db {
-        Some(path) => path,
-        None => return (StatusCode::NOT_FOUND, "Region not found on disk").into_response(),
-    };
-
-    // Step B: Open the SQLite database
-    let conn = match Connection::open(db_path) {
+    // 2. Open the SQLite database
+    let conn = match Connection::open(&db_path) {
         Ok(c) => c,
         Err(_) => return (StatusCode::INTERNAL_SERVER_ERROR, "Database locked").into_response(),
     };
 
-    // Step C: The GIS Math (Crucial!)
-    // Web maps (React) count Y from the top down. MBTiles (SQLite) counts Y from the bottom up.
-    // We have to flip the Y coordinate to match them up using bitwise math.
-    let tms_y = (1 << z) - 1 - y;
-    // let tms_y = y;
+    // 3. The GIS Math
+    // Most MBTiles use TMS (flipped Y). If your map stays blank but the terminal says it found the file,
+    // your map compiler might be using XYZ instead. If so, change this to: let query_y = y;
+    let query_y = (1 << z) - 1 - y;
 
-
-    // Step D: Extract the exact tile image bytes from the database
+    // 4. Extract the exact tile image bytes from the database
     let mut stmt = match conn.prepare("SELECT tile_data FROM tiles WHERE zoom_level = ?1 AND tile_column = ?2 AND tile_row = ?3") {
         Ok(s) => s,
         Err(_) => return (StatusCode::INTERNAL_SERVER_ERROR, "Query failed").into_response(),
     };
 
-    let tile_data: Result<Vec<u8>, _> = stmt.query_row([z, x, tms_y], |row| row.get(0));
+    let tile_data: Result<Vec<u8>, _> = stmt.query_row([z, x, query_y], |row| row.get(0));
 
     match tile_data {
         Ok(bytes) => {
-            // Success! Return the raw image bytes to React with the correct headers
             ([(header::CONTENT_TYPE, "application/x-protobuf"), 
             (header::CONTENT_ENCODING, "gzip")], bytes).into_response()
-            // Note: If your tiles are vector (.pbf), application/x-protobuf is correct. 
-            // If they are raster (.png or .jpg), change this to "image/png" or "image/jpeg".
         }
         Err(_) => {
-            // Tile doesn't exist (e.g., they zoomed into an empty field) -> Return 404 void
-            (StatusCode::NOT_FOUND, "Tile empty").into_response()
+            // Tell the browser "No Data Here" without throwing a red 404 error
+            StatusCode::NO_CONTENT.into_response()
         }
     }
 }

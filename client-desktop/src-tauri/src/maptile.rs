@@ -1,3 +1,4 @@
+//maptile.rs
 use chrono::NaiveDate;
 use futures_util::StreamExt;
 use reqwest::Client;
@@ -177,4 +178,49 @@ pub fn delete_map(app: AppHandle, file_name: String) -> Result<(), String> {
     } else {
         Err("File not found".to_string())
     }
+}
+
+//Pull all mapfiles in
+#[tauri::command]
+pub fn list_maps(app: tauri::AppHandle) -> Vec<String> {
+    let mut maps_dir = match app.path().app_data_dir() {
+        Ok(dir) => dir,
+        Err(_) => return vec![],
+    };
+    maps_dir.push("maps");
+
+    if !maps_dir.exists() {
+        return vec![];
+    }
+
+    std::fs::read_dir(maps_dir)
+        .map(|entries| {
+            entries.filter_map(|e| e.ok())
+                .map(|e| e.file_name().to_string_lossy().into_owned())
+                .filter(|name| name.ends_with(".mbtiles"))
+                .collect()
+        })
+        .unwrap_or_else(|_| vec![])
+}
+
+#[tauri::command]
+pub fn get_local_maps(app: tauri::AppHandle) -> Vec<String> {
+    let mut maps_dir = match app.path().app_data_dir() {
+        Ok(dir) => dir,
+        Err(_) => return vec![],
+    };
+    maps_dir.push("maps");
+
+    if !maps_dir.exists() {
+        return vec![];
+    }
+
+    std::fs::read_dir(maps_dir)
+        .map(|entries| {
+            entries.filter_map(|e| e.ok())
+                .map(|e| e.file_name().to_string_lossy().into_owned())
+                .filter(|name| name.ends_with(".mbtiles"))
+                .collect()
+        })
+        .unwrap_or_else(|_| vec![])
 }

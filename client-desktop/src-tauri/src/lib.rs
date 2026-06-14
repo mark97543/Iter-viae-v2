@@ -1,5 +1,5 @@
 use tauri::{Manager, Emitter}; 
-use crate::menu::create_menu; // Ensure menu.rs has 'pub fn create_menu'
+use crate::menu::create_menu; 
 
 pub mod menu;
 pub mod maptile;
@@ -14,13 +14,13 @@ pub fn run() {
             maptile::check_file_exists,
             maptile::check_most_recent_map,
             maptile::delete_old_maps,
-            maptile::delete_map
+            maptile::delete_map,
+            maptile::list_maps,
+            maptile::get_local_maps
         ])
         .setup(|app| {
-            // 1. Attach the menu
-            app.set_menu(create_menu(app.handle())?)?;
+            let _ = app.set_menu(create_menu(app.handle()).unwrap());
             
-            // 2. Initialize Tile Server
             if let Ok(mut maps_dir) = app.path().app_data_dir() {
                 maps_dir.push("maps");
                 let _ = std::fs::create_dir_all(&maps_dir);
@@ -33,7 +33,6 @@ pub fn run() {
             match event.id().as_ref() {
                 "quit" => app_handle.exit(0),
                 "debug" => {
-                    // This assumes your window label is "main" (Tauri default)
                     if let Some(window) = app_handle.get_webview_window("main") {
                         let _ = window.open_devtools();
                     }
