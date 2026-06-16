@@ -68,18 +68,34 @@ export const useMapLayers = (map: maplibregl.Map, mapFiles: string[]) => {
                 const symbolConfig: any = { 
                     ...base, 
                     type: 'symbol', 
-                    layout: { 'text-field': ['get', 'name'], 'text-size': 10, 'text-offset': [0, 1.5], 'text-anchor': 'top' },
-                    paint: { 'text-color': layer.color } 
+                    layout: {},
+                    paint: {}
                 };
+
+                //OPTIONAL TEXT LOGIC ---
+                // Only build text properties if the registry says showText is true
+                if (layer.showText) {
+                    symbolConfig.layout['text-field'] = ['get', 'name'];
+                    symbolConfig.layout['text-size'] = 10;
+                    symbolConfig.layout['text-offset'] = [0, 1.5];
+                    symbolConfig.layout['text-anchor'] = 'top';
+                    symbolConfig.paint['text-color'] = layer.color;
+                }
 
                 // Add icon logic if present
                 if (layer.iconKey) {
                     const icon = ICON_REGISTRY[layer.iconKey];
                     symbolConfig.layout['icon-image'] = icon.id;
-                    symbolConfig.layout['icon-size'] = 0.8;
-                    symbolConfig.paint['icon-color'] = icon.color;
-                    symbolConfig.paint['icon-halo-color'] = icon.halo;
-                    symbolConfig.paint['icon-halo-width'] = 2;
+                    symbolConfig.layout['icon-size'] = icon.icon_size;
+                    symbolConfig.layout['icon-allow-overlap'] = true;
+                    // Prevent other layers from moving out of the way for this icon
+                    symbolConfig.layout['icon-ignore-placement'] = true;
+
+                    // If text IS enabled for this icon, make the text optional
+                    // so it doesn't drag the icon down with it during a collision
+                    if (layer.showText) {
+                        symbolConfig.layout['text-optional'] = true;
+                    }
                 }
 
                 if (layer.filter) symbolConfig.filter = layer.filter;

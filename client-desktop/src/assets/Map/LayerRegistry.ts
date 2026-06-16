@@ -8,6 +8,7 @@ export interface MapLayerConfig {
     enabled: boolean;
     filter?:any[];
     iconKey?:keyof typeof ICON_REGISTRY;
+    showText?:boolean;
 }
 
 //Icon Definitions
@@ -15,8 +16,7 @@ export const ICON_REGISTRY ={
     fuel: { 
         id: 'fuel-icon', 
         path: 'fuel.png', 
-        color: '#F8FAFC',    // White
-        halo: '#000000'      // Black halo for contrast
+        icon_size: 0.25,
     },
 }
 
@@ -53,11 +53,12 @@ export const LAYER_REGISTRY: MapLayerConfig[] = [
         id: 'poi-fuel', 
         type: 'symbol', 
         color: '#757575', 
-        minzoom: 10, 
+        minzoom: 6, 
         maxzoom: HIGH_RES_ZOOM, 
         enabled: true, 
         iconKey:'fuel',
-        filter: ['==', ['get', 'subclass'], 'fuel'] 
+        filter: ['==', ['get', 'subclass'], 'fuel'],
+        showText:false,
     },
     { id: 'mountain_peak', type: 'symbol', color: '#566573', minzoom: 7, maxzoom: HIGH_RES_ZOOM, enabled: false },
     { id: 'aerodrome_label', type: 'symbol', color: '#000000', minzoom: 10, maxzoom: HIGH_RES_ZOOM, enabled: false },
