@@ -11,7 +11,7 @@ const loadIcons = async (map: maplibregl.Map) => {
     }
 };
 
-export const useMapLayers = (map: maplibregl.Map, mapFiles: string[]) => {
+export const useMapLayers = (map: maplibregl.Map, mapFiles: string[], layerVisibility:Record<string,boolean>) => {
     if (!map.loaded()) return;
     loadIcons(map);
    
@@ -30,9 +30,15 @@ export const useMapLayers = (map: maplibregl.Map, mapFiles: string[]) => {
 
         // Add Layers
         LAYER_REGISTRY.forEach((layer) => {
-            if (!layer.enabled) return;
+            const isVisible = layerVisibility[layer.id];
+            const visibilityValue = isVisible ? 'visible' : 'none';
+
             const layerId = `${sourceId}-${layer.id}-layer`;
-            if (map.getLayer(layerId)) return;
+
+            if (map.getLayer(layerId)) {
+                map.setLayoutProperty(layerId, 'visibility', visibilityValue);
+                return; 
+            }
 
             const base: any = { 
                 id: layerId, source: sourceId, 'source-layer': layer.id.split('-')[0], // Extract 'poi' from 'poi-fuel'
@@ -104,3 +110,6 @@ export const useMapLayers = (map: maplibregl.Map, mapFiles: string[]) => {
         });
     });
 };
+
+
+//TODO: Need Map Filter Tool. 

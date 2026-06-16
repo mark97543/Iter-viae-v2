@@ -9,3 +9,8 @@
   --color-ui-text: #FAFAFA;
   --color-ui-muted: #A3A3A3;
 }
+
+.maplibregl-ctrl-logo,
+.maplibregl-ctrl-attrib {
+    display: none !important;
+}
