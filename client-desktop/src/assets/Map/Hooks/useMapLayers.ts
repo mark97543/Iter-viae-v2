@@ -11,7 +11,12 @@ const loadIcons = async (map: maplibregl.Map) => {
     }
 };
 
-export const useMapLayers = (map: maplibregl.Map, mapFiles: string[], layerVisibility:Record<string,boolean>) => {
+export const useMapLayers = (
+        map: maplibregl.Map, 
+        mapFiles: string[], 
+        layerVisibility:Record<string,boolean>,
+        onPoiClick?:(properties:any)=>void
+    ) => {
     if (!map.loaded()) return;
     loadIcons(map);
    
@@ -115,6 +120,17 @@ export const useMapLayers = (map: maplibregl.Map, mapFiles: string[], layerVisib
                 map.on('mouseleave', layerId, () =>{
                     map.getCanvas().style.cursor ='';
                 });
+
+                //Click Menu on POI
+                map.on('click',layerId, (e)=>{
+                    if(e.features && e.features.length > 0){
+                        const properties = e.features[0];
+
+                        const dataPackage = {prop:properties,coord:e.lngLat}
+                        //send the clicked poi data back to the react component
+                        onPoiClick?.(dataPackage);
+                    }}
+                )
             }
         });
     });

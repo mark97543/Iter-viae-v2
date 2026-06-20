@@ -5,12 +5,14 @@ import {useLocalMaps} from './Hooks/useLoaclMaps';
 import {useMapLayers} from './Hooks/useMapLayers';
 import { useLayerToggles } from './Hooks/useLayerToggles';
 import LayerControlMenu from './Menus/LayerControlMenu';
+import MenuCard from './Menus/MenuCard';
 
 function TacticalMap() {
     const mapContainer = useRef<HTMLDivElement>(null);
     const mapFiles = useLocalMaps();
     const { layerVisibility, toggleLayer } = useLayerToggles();
     const mapRef = useRef<maplibregl.Map | null>(null);
+    const [clickedPoi, setClickedPoi]=useState<any | null>(null);
 
     useEffect(() => {
         if (!mapContainer.current || mapFiles.length === 0) return;
@@ -27,23 +29,21 @@ function TacticalMap() {
         mapRef.current = map;
 
         map.on('load', () => {
-            useMapLayers(map, mapFiles, layerVisibility); 
+            useMapLayers(
+                map, 
+                mapFiles, 
+                layerVisibility,
+                (poiProperties)=>setClickedPoi(poiProperties)
+            ); 
         });
 
-        //Temp Debug Code
-        map.on('click', (e) => {
-            // Query all layers that match 'transportation' in their ID
-            const features = map.queryRenderedFeatures(e.point, {
-                filter: ['all'], // You can remove this or keep it simple
-            });
+        //When Click remove POI menu data
+        map.on('click', (e)=>{
+            if(e.defaultPrevented) return;
 
-            // Filter the results to only those that have 'transportation' in their layer ID
-            const transportFeatures = features.filter(f => f.layer.id.includes('transportation'));
-
-            if (transportFeatures.length > 0) {
-                console.log("Feature Data:", transportFeatures[0].properties);
-            }
-        });
+            console.log('Empty Map Terrain clicked. Cleareing Telementry view State');
+            setClickedPoi(null)
+        })
 
         return () => {
             map.remove(); 
@@ -79,6 +79,7 @@ function TacticalMap() {
             />
 
             <LayerControlMenu layerVisibility={layerVisibility} toggleLayer={toggleLayer}/>
+            <MenuCard poi={clickedPoi}/>
         </div>
     );
 }
