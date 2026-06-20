@@ -1,6 +1,11 @@
 import {useState} from 'react'
 
-function LayerControlMenu(){
+interface LayerControlProps {
+    layerVisibility: Record<string, boolean>;
+    toggleLayer: (layerId: string) => void;
+}
+
+function LayerControlMenu({layerVisibility, toggleLayer}:LayerControlProps){
     const [button1, setButton1]=useState(false)
 
     return (
@@ -32,7 +37,7 @@ function LayerControlMenu(){
                     <img src="/layers.svg" className='h-5 w-5 opacity-50 hover:opacity-100' alt="Layers" />
                 </button> */}
 
-                <Button1Window visible={button1}/>
+                <Button1Window visible={button1} layerVisibility={layerVisibility} toggleLayer={toggleLayer}/>
 
             </div>
         </div>
@@ -41,10 +46,19 @@ function LayerControlMenu(){
 
 export default LayerControlMenu;
 
-function Button1Window({visible}: {visible: boolean}){
+interface Button1WindowProps {
+    visible: boolean;
+    layerVisibility: Record<string, boolean>;
+    toggleLayer: (layerId: string) => void;
+}
+
+function Button1Window( {visible, layerVisibility, toggleLayer }: Button1WindowProps){
     
     if(!visible) return null; 
-    
+
+    //Check if the fuel layer is curent
+    const isFuelVisible = layerVisibility['poi-fuel'];
+
     return(
         <div
             className='
@@ -69,14 +83,27 @@ function Button1Window({visible}: {visible: boolean}){
                 cursor-pointer'
         >
             <div>
-                <div className='flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-neutral-900/40 transition-colors group cursor-pointer'>
+                <div 
+                    className='
+                        flex 
+                        items-center 
+                        gap-2.5 
+                        px-2 
+                        py-1.5 
+                        rounded-lg 
+                        hover:bg-neutral-900/40 
+                        transition-colors 
+                        group 
+                        cursor-pointer'
+                    onClick={()=>toggleLayer('poi-fuel')}
+                >
                     <img 
                         src='./gas.png' 
                         className='h-4 w-4 object-contain opacity-70 group-hover:opacity-100 transition-opacity' 
                         alt="Fuel POI" 
                     />
                     <span className='text-xs font-medium font-mono uppercase tracking-wide text-neutral-300 group-hover:text-white transition-colors'>
-                        Fuel Station
+                        Fuel Station {isFuelVisible ? '(On)' : '(Off)'}
                     </span>
                 </div>
             </div>

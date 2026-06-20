@@ -10,6 +10,7 @@ function TacticalMap() {
     const mapContainer = useRef<HTMLDivElement>(null);
     const mapFiles = useLocalMaps();
     const { layerVisibility, toggleLayer } = useLayerToggles();
+    const mapRef = useRef<maplibregl.Map | null>(null);
 
     useEffect(() => {
         if (!mapContainer.current || mapFiles.length === 0) return;
@@ -22,6 +23,8 @@ function TacticalMap() {
             maxZoom:15.9, //Sets max zoom allowed by user. Too Far and this will make screen go blank
             attributionControl:false //KILL THE TEXT / INFO BUTTON
         });
+
+        mapRef.current = map;
 
         map.on('load', () => {
             useMapLayers(map, mapFiles, layerVisibility); 
@@ -42,8 +45,28 @@ function TacticalMap() {
             }
         });
 
-        return () => map.remove(); 
+        return () => {
+            map.remove(); 
+            mapRef.current = null;
+        };
     }, [mapFiles]);
+
+    // Dynamically update layer visibilities when layerVisibility state changes
+    useEffect(() => {
+        const map = mapRef.current;
+        if (!map || !map.loaded()) return;
+
+        mapFiles.forEach(file => {
+            const sourceId = file.replace('.mbtiles', '');
+
+            Object.entries(layerVisibility).forEach(([layerId, isVisible]) => {
+                const mapLayerId = `${sourceId}-${layerId}-layer`;
+                if (map.getLayer(mapLayerId)) {
+                    map.setLayoutProperty(mapLayerId, 'visibility', isVisible ? 'visible' : 'none');
+                }
+            });
+        });
+    }, [layerVisibility, mapFiles]);
 
 
     return (
@@ -55,7 +78,7 @@ function TacticalMap() {
                 className='w-full h-full absolute inset-0 z-0' 
             />
 
-            <LayerControlMenu/>
+            <LayerControlMenu layerVisibility={layerVisibility} toggleLayer={toggleLayer}/>
         </div>
     );
 }
