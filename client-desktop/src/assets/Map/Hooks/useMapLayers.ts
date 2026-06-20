@@ -125,8 +125,14 @@ export const useMapLayers = (
                 map.on('click',layerId, (e)=>{
                     if(e.features && e.features.length > 0){
                         const properties = e.features[0];
+                        const feature = e.features[0];
 
-                        const dataPackage = {prop:properties,coord:e.lngLat}
+                        const poiCoords = feature.geometry.type === 'Point' 
+                            ? (feature.geometry as any).coordinates 
+                            : [e.lngLat.lng, e.lngLat.lat]; // Fallback to click if not a point
+
+                        //console.log("COORD IN: ", feature.geometry)
+                        const dataPackage = {prop:properties,coord:{ lng: poiCoords[0], lat: poiCoords[1] }}
                         //send the clicked poi data back to the react component
                         onPoiClick?.(dataPackage);
                     }}
@@ -137,4 +143,3 @@ export const useMapLayers = (
 };
 
 
-//TODO: Need Map Filter Tool. 
