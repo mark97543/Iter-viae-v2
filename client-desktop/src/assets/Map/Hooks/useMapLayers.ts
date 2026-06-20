@@ -106,6 +106,15 @@ export const useMapLayers = (map: maplibregl.Map, mapFiles: string[], layerVisib
 
                 if (layer.filter) symbolConfig.filter = layer.filter;
                 map.addLayer(symbolConfig);
+
+                //Cursor for POI
+                map.on('mouseenter',layerId, ()=>{
+                    map.getCanvas().style.cursor = 'pointer'
+                });
+
+                map.on('mouseleave', layerId, () =>{
+                    map.getCanvas().style.cursor ='';
+                });
             }
         });
     });
