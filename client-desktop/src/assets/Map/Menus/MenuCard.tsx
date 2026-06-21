@@ -51,6 +51,11 @@ function MenuCard({ poi }: any) {
                     {copied ? '[ COPIED ]' : '[ COPY ]'}
                 </button>
            </div>
+
+           {/*Add Point Buttong */}
+            <button className="w-full mt-3 bg-tactical-red hover:bg-tactical-hover text-white font-bold uppercase tracking-wider text-xs py-2.5 px-4 rounded-lg transition-all duration-200 cursor-pointer shadow-[0_0_10px_rgba(220,38,38,0.2)] hover:shadow-[0_0_12px_rgba(220,38,38,0.3)]">
+                [ Add Waypoint ]
+            </button>
         </div>
     );
 }
