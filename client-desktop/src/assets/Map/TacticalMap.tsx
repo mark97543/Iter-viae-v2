@@ -6,6 +6,7 @@ import {useMapLayers} from './Hooks/useMapLayers';
 import { useLayerToggles } from './Hooks/useLayerToggles';
 import LayerControlMenu from './Menus/LayerControlMenu';
 import MenuCard from './Menus/MenuCard';
+import LeftBar from './LeftBar';
 
 function TacticalMap() {
     const mapContainer = useRef<HTMLDivElement>(null);
@@ -107,6 +108,7 @@ function TacticalMap() {
             />
 
             <LayerControlMenu layerVisibility={layerVisibility} toggleLayer={toggleLayer}/>
+            <LeftBar/>
             <MenuCard poi={clickedPoi}/>
         </div>
     );
