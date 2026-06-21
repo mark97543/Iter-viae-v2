@@ -6,7 +6,7 @@ function AddPoint({ isOpen }: AddPointProps) {
     return (
         <div className={`
             absolute bottom-0 left-1/2 -translate-x-1/2 z-40
-            w-full max-w-xs
+            w-full max-w-sm
             bg-canvas-panel/95 border-t border-x border-canvas-border rounded-t-xl p-4
             transition-all duration-300 ease-out
             ${isOpen ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0 pointer-events-none'}

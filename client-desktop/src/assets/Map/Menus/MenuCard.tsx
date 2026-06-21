@@ -21,7 +21,7 @@ function MenuCard({ poi }: any) {
         <div className={`
                 /*Positioning and Layout */
                 absolute bottom-0 left-1/2 -translate-x-1/2
-                z-40 w-full max-w-md
+                z-40 w-full max-w-sm
                 /*Aesthetics */
                 bg-neutral-950/95 border-t border-x border-neutral-800 rounded-t-xl p-4
                 /*Animation */

@@ -13,11 +13,14 @@
     "windows": [
       {
         "fullscreen": false,
-        "height": 600,
+        "height": 768,
+        "width":1024,
         "resizable": true,
         "title": "Iter Viae",
-        "width": 800,
-        "devtools": true
+        "devtools": true,
+        "minHeight": 600,
+        "minWidth": 850,
+        "maximized": true
       }
     ],
     "security": {

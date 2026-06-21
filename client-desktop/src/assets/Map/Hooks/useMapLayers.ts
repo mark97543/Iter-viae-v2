@@ -51,35 +51,50 @@ export const useMapLayers = (
             };
 
             if (layer.type === 'fill') {
-                map.addLayer({ ...base, type: 'fill', paint: { 'fill-color': layer.color } });
+                map.addLayer({ 
+                    ...base, 
+                    type: 'fill', 
+                    paint: { 
+                        'fill-color': layer.color, 
+                        'fill-opacity':0.9, 
+                        'fill-extrusion-height': ['get', 'render_height'], // Dynamically height based on data
+                        'fill-extrusion-base': ['get', 'render_min_height'],
+                    },
+                    layout: {
+                        'visibility': visibilityValue
+                    }
+                });
             } else if (layer.type === 'line') {
                 const layerConfig: any = { 
                     ...base, 
                     type: 'line', 
                     paint: { 
                         'line-color': layer.color,
-                        'line-width': [
+                        // 1. Line Width: If a static width is defined, use it. Otherwise, use your road logic.
+                        'line-width': layer.width || [
                             'match',
                             ['get', 'class'],
-                            'motorway', 4.0,   // Increased from 3.0
-                            'primary', 3.5,    // Increased from 2.5
-                            'secondary', 3.0,  // Increased from 2.0
-                            'tertiary', 2.5,   // Increased from 1.5
-                            'minor', 2.0,      // Increased from 1.0
-                            'residential', 2.0,// Increased from 1.0
-                            'service', 1.5,    // Increased from 0.8
-                            2.0                // Default width
-                        ]
+                            'motorway', 4.0,
+                            'primary', 3.5,
+                            2.0 // Default
+                        ],
+                        'line-dasharray': layer.dasharray || [1, 0]
                     },
-                    layout: { 'line-join': 'round', 'line-cap': 'round' }
+                    layout: { 
+                        'line-join': 'round', 
+                        'line-cap': 'round',
+                        'visibility': visibilityValue
+                    }
                 };
                 if (layer.filter) layerConfig.filter = layer.filter;
                 map.addLayer(layerConfig);
-            } else if (layer.type === 'symbol') {
+            }else if (layer.type === 'symbol') {
                 const symbolConfig: any = { 
                     ...base, 
                     type: 'symbol', 
-                    layout: {},
+                    layout: {
+                        'visibility': visibilityValue
+                    },
                     paint: {}
                 };
 
