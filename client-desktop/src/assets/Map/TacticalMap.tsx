@@ -7,6 +7,7 @@ import { useLayerToggles } from './Hooks/useLayerToggles';
 import LayerControlMenu from './Menus/LayerControlMenu';
 import MenuCard from './Menus/MenuCard';
 import LeftBar from './LeftBar';
+import AddPoint from './Menus/AddPoint';
 
 function TacticalMap() {
     const mapContainer = useRef<HTMLDivElement>(null);
@@ -14,6 +15,7 @@ function TacticalMap() {
     const { layerVisibility, toggleLayer } = useLayerToggles();
     const mapRef = useRef<maplibregl.Map | null>(null);
     const [clickedPoi, setClickedPoi]=useState<any | null>(null);
+    const [addPoint, setAddPoint]=useState(false);
 
     useEffect(() => {
         if (!mapContainer.current || mapFiles.length === 0) return;
@@ -51,6 +53,7 @@ function TacticalMap() {
 
             console.log('Empty Map Terrain clicked. Cleareing Telementry view State');
             setClickedPoi(null)
+            setAddPoint(false) //Closes Add point 
         })
 
         //Create Waypoint markers
@@ -70,6 +73,7 @@ function TacticalMap() {
             })
             .setLngLat([e.lngLat.lng, e.lngLat.lat])
             .addTo(map);
+            setAddPoint(true); // Sets Point Marker on the stage
 
            console.log(`Waypoint placed at: ${lat}, ${lng}`);
         })
@@ -110,6 +114,7 @@ function TacticalMap() {
             <LayerControlMenu layerVisibility={layerVisibility} toggleLayer={toggleLayer}/>
             <LeftBar/>
             <MenuCard poi={clickedPoi}/>
+            <AddPoint isOpen={addPoint}/>
         </div>
     );
 }
