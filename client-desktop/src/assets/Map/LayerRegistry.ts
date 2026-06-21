@@ -2,6 +2,7 @@
 export interface MapLayerConfig {
     id: string;
     type: 'fill' | 'line' | 'symbol';
+    sourceLayer?:string;
     color: string;
     minzoom?: number;
     maxzoom?: number;
@@ -10,7 +11,7 @@ export interface MapLayerConfig {
     iconKey?:keyof typeof ICON_REGISTRY;
     showText?:boolean;
     dasharray?:number[]; //[length, gap]
-    width?:number[];
+    width?:number;
 }
 
 //Icon Definitions
@@ -22,47 +23,58 @@ export const ICON_REGISTRY ={
     },
 }
 
-const HIGH_RES_ZOOM = 20; 
-
 export const LAYER_REGISTRY: MapLayerConfig[] = [
+    // --- BASE LAYERS ---
+    { id: 'water', sourceLayer: 'water', type: 'fill', color: '#0F1C2C', enabled: true },
+    { id: 'waterway', sourceLayer: 'waterway', type: 'line', color: '#1A304A', enabled: true },
+    { id: 'landcover', sourceLayer: 'landcover', type: 'fill', color: '#1C1C1E', enabled: false },
+    { id: 'landuse', sourceLayer: 'landuse', type: 'fill', color: '#222224', enabled: false },
+    { id: 'park', sourceLayer: 'park', type: 'fill', color: '#17281B', enabled: false },
+    
+    // --- INFRASTRUCTURE ---
     { 
         id: 'transportation', 
+        sourceLayer: 'transportation', 
         type: 'line', 
-        color: '#5D6D7E', 
-        minzoom: 4, 
-        maxzoom: HIGH_RES_ZOOM, 
-        enabled: true, 
-        filter: [
-            'all',
-            ['!in', 'subclass', 'footway', 'path', 'track'], // Exclude paths/footways
-            ['in', 'class', 'motorway', 'primary', 'secondary', 'tertiary', 'minor', 'service', 'residential', 'unclassified']
-        ]
+        color: '#3C4A5A', 
+        enabled: true,
+        filter: ['all', ['!in', 'subclass', 'footway', 'path', 'track']] 
     },
+    {
+        id: 'boundary-state',
+        sourceLayer: 'boundary',
+        type: 'line',
+        color: '#DC2626',
+        enabled: true,
+        width: 2.0,
+        filter: ['==', ['get', 'admin_level'], 4]
+    },
+    {
+        id: 'boundary-international',
+        sourceLayer: 'boundary', // Ensure this matches your tile schema
+        type: 'line',
+        color: '#FAFAFA', // High-contrast white for national borders
+        enabled: true,
+        width: 2.0,
+        filter: ['==', ['get', 'admin_level'], 2] // Level 2 = International
+    },
+    {
+        id: 'fill-building',
+        sourceLayer: 'building',
+        type: 'fill',
+        color: '#2D2D33',
+        enabled: true
+    },
+    
+    // --- POINTS OF INTEREST ---
     { 
         id: 'poi-fuel', 
+        sourceLayer: 'poi', 
         type: 'symbol', 
-        color: '#757575', 
-        minzoom: 6, 
-        maxzoom: HIGH_RES_ZOOM, 
+        color: '#EAB308', 
         enabled: false, 
-        iconKey:'fuel',
-        filter: ['==', ['get', 'subclass'], 'fuel'],
-        showText:false,
-    },
-    {
-        id:'boundary-state',
-        type:'line',
-        color:'#D32F2F', // Your tactical crimson
-        enabled:true,
-        filter:['==',['get','admin_level'],4]
-    },
-    {
-        id:'building',
-        type:'fill',
-        color: '#D4D4D4', // Industrial grey for the tactical look
-        minzoom:14,
-        maxzoom:20,
-        enabled:true
-    },
+        iconKey: 'fuel',
+        filter: ['==', ['get', 'subclass'], 'fuel']
+    }
 ];
 

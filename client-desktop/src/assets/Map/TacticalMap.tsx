@@ -22,7 +22,7 @@ function TacticalMap() {
 
         const map = new maplibregl.Map({
             container: mapContainer.current,
-            style: { version: 8, sources: {}, layers: [{ id: 'bg', type: 'background', paint: { 'background-color': '#F2F0E9' } }] },
+            style: { version: 8, sources: {}, layers: [{ id: 'bg', type: 'background', paint: { 'background-color': '#0A0A0A' } }] },
             center: [-114.0, 44.0],
             zoom: 6,
             maxZoom:15.9, //Sets max zoom allowed by user. Too Far and this will make screen go blank

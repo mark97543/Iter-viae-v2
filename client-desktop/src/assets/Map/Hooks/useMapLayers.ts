@@ -45,20 +45,33 @@ export const useMapLayers = (
                 return; 
             }
 
+            const sourceLayerName = layer.sourceLayer || layer.id.split('-').pop(); // .pop() takes the last part, usually more reliable
+            //console.log(`[MAP DEBUG] Layer: ${layer.id} | Searching Source-Layer: ${sourceLayerName} | Layer ID: ${layerId}`);
+            //console.log(`Debug Layer: ${layerId} | SourceLayer: ${sourceLayerName}`);
             const base: any = { 
-                id: layerId, source: sourceId, 'source-layer': layer.id.split('-')[0], // Extract 'poi' from 'poi-fuel'
-                minzoom: layer.minzoom, maxzoom: layer.maxzoom 
+                id: layerId, 
+                source: sourceId, 
+                'source-layer': sourceLayerName, 
+                minzoom: layer.minzoom, 
+                maxzoom: layer.maxzoom 
             };
 
             if (layer.type === 'fill') {
+                const isBuilding = layer.id === 'fill-building';
                 map.addLayer({ 
                     ...base, 
-                    type: 'fill', 
-                    paint: { 
-                        'fill-color': layer.color, 
-                        'fill-opacity':0.9, 
-                        'fill-extrusion-height': ['get', 'render_height'], // Dynamically height based on data
+                    // 1. Correct the type here
+                    type: isBuilding ? 'fill-extrusion' : 'fill', 
+                    paint: isBuilding ? {
+                        // 2. Extrusion properties are valid ONLY for type 'fill-extrusion'
+                        'fill-extrusion-color': layer.color,
+                        'fill-extrusion-height': ['get', 'render_height'],
                         'fill-extrusion-base': ['get', 'render_min_height'],
+                        'fill-extrusion-opacity': 0.9
+                    } : { 
+                        // 3. Standard fill properties for non-building polygons
+                        'fill-color': layer.color, 
+                        'fill-opacity': 0.9 
                     },
                     layout: {
                         'visibility': visibilityValue
