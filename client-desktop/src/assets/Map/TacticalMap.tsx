@@ -27,6 +27,7 @@ function TacticalMap() {
         });
 
         mapRef.current = map;
+        let draftMarker: maplibregl.Marker | null = null; 
 
         map.on('load', () => {
             useMapLayers(
@@ -37,12 +38,39 @@ function TacticalMap() {
             ); 
         });
 
-        //When Click remove POI menu data
+        //When Click remove POI menu data and draft marker
         map.on('click', (e)=>{
             if(e.defaultPrevented) return;
 
+            //Clear the Draft marker
+            if (draftMarker) {
+                draftMarker.remove();
+                draftMarker = null;
+            }
+
             console.log('Empty Map Terrain clicked. Cleareing Telementry view State');
             setClickedPoi(null)
+        })
+
+        //Create Waypoint markers
+        map.on('contextmenu', (e)=>{
+            e.preventDefault();
+            setClickedPoi(null)
+            const {lng,lat}=e.lngLat; //extract coordinates from the click event
+
+            //Clear ofl draft marker
+            if(draftMarker){
+                draftMarker.remove();
+            }
+
+            draftMarker = new maplibregl.Marker({
+                color: '#D32F2F',
+                draggable:true
+            })
+            .setLngLat([e.lngLat.lng, e.lngLat.lat])
+            .addTo(map);
+
+           console.log(`Waypoint placed at: ${lat}, ${lng}`);
         })
 
         return () => {
