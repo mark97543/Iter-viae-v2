@@ -1,7 +1,11 @@
 import React, {useState} from 'react';
 
-// Inside MenuCard.tsx
-function MenuCard({ poi }: any) {
+interface MenuCardProps {
+    poi: any;
+    onAddWaypoint?: (poiData: any) => void;
+}
+
+function MenuCard({ poi, onAddWaypoint }: MenuCardProps) {
     const isOpen = !!poi; //Boolean Check to handle the transition classes
     const properties = poi?.prop.properties;
     const name = properties?.name || properties?.subclass;
@@ -28,6 +32,7 @@ function MenuCard({ poi }: any) {
                 transition-all duration-300 ease-out
                 ${poi ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'}
             `}
+            onClick={(e) => e.stopPropagation()}
         >
             {/* Header Row */}
            <div className="flex justify-between items-start mb-4">
@@ -45,7 +50,10 @@ function MenuCard({ poi }: any) {
                     {coordsString}
                 </span>
                 <button 
-                    onClick={copyToClipboard}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        copyToClipboard();
+                    }}
                     className={`font-mono text-xs uppercase px-3 py-1 rounded transition-colors ${copied ? 'bg-green-900 text-green-300' : 'bg-red-900/20 text-red-500 hover:bg-red-900/40'}`}
                 >
                     {copied ? '[ COPIED ]' : '[ COPY ]'}
@@ -53,7 +61,18 @@ function MenuCard({ poi }: any) {
            </div>
 
            {/*Add Point Buttong */}
-            <button className="w-full mt-3 bg-tactical-red hover:bg-tactical-hover text-white font-bold uppercase tracking-wider text-xs py-2.5 px-4 rounded-lg transition-all duration-200 cursor-pointer shadow-[0_0_10px_rgba(220,38,38,0.2)] hover:shadow-[0_0_12px_rgba(220,38,38,0.3)]">
+            <button 
+                onClick={(e) => {
+                    e.stopPropagation();
+                    if (onAddWaypoint && poi) {
+                        onAddWaypoint({
+                            name: name || 'Waypoint',
+                            coord: poi.coord
+                        });
+                    }
+                }}
+                className="w-full mt-3 bg-tactical-red hover:bg-tactical-hover text-white font-bold uppercase tracking-wider text-xs py-2.5 px-4 rounded-lg transition-all duration-200 cursor-pointer shadow-[0_0_10px_rgba(220,38,38,0.2)] hover:shadow-[0_0_12px_rgba(220,38,38,0.3)]"
+            >
                 [ Add Waypoint ]
             </button>
         </div>

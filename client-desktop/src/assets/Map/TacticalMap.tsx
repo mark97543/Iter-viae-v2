@@ -8,6 +8,8 @@ import LayerControlMenu from './Menus/LayerControlMenu';
 import MenuCard from './Menus/MenuCard';
 import LeftBar from './LeftBar';
 import AddPoint from './Menus/AddPoint';
+import { useWaypoints } from '../../Navigation/useWaypoints';
+import { WaypointLayer } from '../../Navigation/WaypointLayer';
 
 function TacticalMap() {
     const mapContainer = useRef<HTMLDivElement>(null);
@@ -16,6 +18,8 @@ function TacticalMap() {
     const mapRef = useRef<maplibregl.Map | null>(null);
     const [clickedPoi, setClickedPoi]=useState<any | null>(null);
     const [addPoint, setAddPoint]=useState(false);
+    const {waypoints, addWaypoint, moveWaypoint}=useWaypoints();
+    const draftMarkerRef = useRef<maplibregl.Marker | null>(null);
 
     useEffect(() => {
         if (!mapContainer.current || mapFiles.length === 0) return;
@@ -30,8 +34,7 @@ function TacticalMap() {
         });
 
         mapRef.current = map;
-        let draftMarker: maplibregl.Marker | null = null; 
-
+        
         map.on('load', () => {
             useMapLayers(
                 map, 
@@ -46,9 +49,9 @@ function TacticalMap() {
             if(e.defaultPrevented) return;
 
             //Clear the Draft marker
-            if (draftMarker) {
-                draftMarker.remove();
-                draftMarker = null;
+            if (draftMarkerRef.current) {
+                draftMarkerRef.current.remove();
+                draftMarkerRef.current = null;
             }
 
             console.log('Empty Map Terrain clicked. Cleareing Telementry view State');
@@ -63,11 +66,11 @@ function TacticalMap() {
             const {lng,lat}=e.lngLat; //extract coordinates from the click event
 
             //Clear ofl draft marker
-            if(draftMarker){
-                draftMarker.remove();
+            if(draftMarkerRef.current){
+                draftMarkerRef.current.remove();
             }
 
-            draftMarker = new maplibregl.Marker({
+            draftMarkerRef.current = new maplibregl.Marker({
                 color: '#D32F2F',
                 draggable:true
             })
@@ -113,8 +116,34 @@ function TacticalMap() {
 
             <LayerControlMenu layerVisibility={layerVisibility} toggleLayer={toggleLayer}/>
             <LeftBar/>
-            <MenuCard poi={clickedPoi}/>
-            <AddPoint isOpen={addPoint}/>
+            <MenuCard 
+                poi={clickedPoi}
+                onAddWaypoint={(poiData) => {
+                    addWaypoint(poiData);
+                    setClickedPoi(null); // Close the POI card
+                }}
+            />
+            <AddPoint 
+                isOpen={addPoint} 
+                onConfirm={() => {
+                    // Now typescript knows exactly what draftMarkerRef is
+                    if (!draftMarkerRef.current) return;
+
+                    const lngLat = draftMarkerRef.current.getLngLat();
+                    const poiData = {
+                        name: "New Waypoint",
+                        coord: { lng: lngLat.lng, lat: lngLat.lat }
+                    };
+
+                    addWaypoint(poiData);
+                    
+                    // Clean up the marker from the map
+                    draftMarkerRef.current.remove();
+                    draftMarkerRef.current = null;
+                    setAddPoint(false);
+                }}
+            />
+            <WaypointLayer map={mapRef.current!} waypoints={waypoints} onWaypointMove={moveWaypoint} />
         </div>
     );
 }
