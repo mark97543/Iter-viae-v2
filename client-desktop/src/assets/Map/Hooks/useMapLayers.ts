@@ -115,10 +115,12 @@ export const useMapLayers = (
                 // Only build text properties if the registry says showText is true
                 if (layer.showText) {
                     symbolConfig.layout['text-field'] = ['get', 'name'];
-                    symbolConfig.layout['text-size'] = 10;
+                    symbolConfig.layout['text-size'] = layer.textSize || 10;
                     symbolConfig.layout['text-offset'] = [0, 1.5];
                     symbolConfig.layout['text-anchor'] = 'top';
                     symbolConfig.paint['text-color'] = layer.color;
+                    symbolConfig.paint['text-halo-color'] = '#0A0A0A'; // Matches map background
+                    symbolConfig.paint['text-halo-width'] = 1.5;
                 }
 
                 // Add icon logic if present
