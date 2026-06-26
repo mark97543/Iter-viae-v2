@@ -11,6 +11,7 @@ interface LeftBarProps{
 
 function LeftBar({waypoints, setWaypoints}:LeftBarProps){
     const [expandBar, setExpandBar]=useState(true);
+    const [editId, setEditId]=useState<string | null>(null);
     
 
     const BarSelect=()=>{
@@ -69,7 +70,7 @@ function LeftBar({waypoints, setWaypoints}:LeftBarProps){
                             <SortableContext items={waypoints ? waypoints.map((w: any) => w.id) : []} strategy={verticalListSortingStrategy}>
                                 {/* Map Through the Waypoints and display them */}
                                 {waypoints && waypoints.map((point:any,index:any)=>(
-                                    <SortableWaypoint key={point.id} point={point} index={index} setWaypoints={setWaypoints}/>
+                                    <SortableWaypoint key={point.id} point={point} index={index} setWaypoints={setWaypoints} editingId={editId} setEditingId={setEditId}/>
                                 )) }
                             </SortableContext>
                         </DndContext>
@@ -89,18 +90,24 @@ function LeftBar({waypoints, setWaypoints}:LeftBarProps){
     )
 }
 
-function SortableWaypoint({ point, index, setWaypoints }: { point: any; index: number;setWaypoints:any }) {
+function SortableWaypoint({ point, index, setWaypoints, editingId, setEditingId }: { point: any; index: number;setWaypoints:any; editingId: string | null; setEditingId: (id: string | null) => void;}) {
     const {attributes, listeners, setNodeRef, transform, transition,} = useSortable({ id: point.id });
     const style = {transform: CSS.Transform.toString(transform), transition,};
-    const [edit, setEdit]= useState(false)
+    const [name, setName]=useState('');
 
-    const editMode = (e:any) =>{
-        e.stopPropagation();
-        setEdit(!edit)
-    }
+    //determine if this point is in editing mode
+    const isEditing = editingId === point.id;
 
     const deleteItem =(id:string)=>{
         setWaypoints((prev:Waypoint[]) => prev.filter(wp=>wp.id !==id))
+    }
+
+    const saveItem = (id:string)=>{
+        const trimmedName = name.trim();
+        setWaypoints((prev:Waypoint[]) =>
+            prev.map(wp => (wp.id === id ? { ...wp, name: trimmedName || wp.name } : wp))
+        );
+        setEditingId(null);
     }
 
     return (
@@ -113,25 +120,54 @@ function SortableWaypoint({ point, index, setWaypoints }: { point: any; index: n
             <div {...listeners} className="w-[30px] h-[30px] row-span-2 self-center shrink-0 flex items-center justify-center bg-neutral-900 border-2 border-neutral-500 rounded-full text-[15px] font-mono font-bold text-ui-text group-hover:border-red-500 group-hover:text-red-400 transition-colors shadow-sm cursor-grab active:cursor-grabbing">
                 {index + 1}
             </div>
-            <span className="text-xs font-bold text-ui-text row-start-1 row-end-1 col-start-2 col-end-2">
-                {point.name}
-            </span>
-            <span>
-                {edit ? (
-                    <div>
-                        <button onClick={(e)=>{editMode(e); deleteItem(point.id)}} className="row-start-1 row-end-1 col-start-3 col-end-3 cursor-pointer">
-                            <img className="h-5 w-5 "  src="./trash.png" />                        
-                        </button>
-                        <button onClick={(e)=>editMode(e)} className="row-start-1 row-end-1 col-start-3 col-end-3 cursor-pointer">
-                            <img className="h-5 w-5" src='./save.png' />
-                        </button>
-                    </div>
+            <span className="text-xs font-bold text-ui-text row-start-1 row-end-1 col-start-2 col-end-2 flex items-center pr-2">
+                {isEditing ? (
+                    <input 
+                        className="bg-neutral-800 text-ui-text border border-canvas-border rounded px-1.5 py-0.5 w-full text-xs outline-none focus:border-neutral-500"
+                        placeholder={point.name} 
+                        value={name} 
+                        onChange={(e)=>setName(e.target.value)}
+                        autoFocus
+                    />
                 ):(
-                    <button onClick={(e)=>{editMode(e)}} className="row-start-1 row-end-1 col-start-3 col-end-3 cursor-pointer">
-                        <img className="h-5 w-5 " src="./pencil.png"/>
+                    point.name
+                )}
+            </span>
+            <div className="row-start-1 row-end-1 col-start-3 col-end-3 flex items-center gap-1.5 justify-end">
+                {isEditing ? (
+                    <>
+                        <button 
+                            onClick={() => saveItem(point.id)} 
+                            className="p-1 rounded hover:bg-canvas-border/80 border border-transparent hover:border-canvas-border transition-colors cursor-pointer"
+                            title="Save"
+                        >
+                            <img className="h-4 w-4" src="./save.png" alt="Save" />
+                        </button>
+                        <button 
+                            onClick={() => {
+                                deleteItem(point.id);
+                                setEditingId(null);
+                            }} 
+                            className="p-1 rounded hover:bg-red-500/20 border border-transparent hover:border-canvas-border transition-colors cursor-pointer"
+                            title="Delete"
+                        >
+                            <img className="h-4 w-4" src="./trash.png" alt="Delete" />
+                        </button>
+                    </>
+                ):(
+                    <button 
+                        disabled={editingId !== null && editingId !== point.id} 
+                        onClick={() => {
+                            setEditingId(point.id);
+                            setName(point.name);
+                        }} 
+                        className="p-1 rounded hover:bg-canvas-border/80 border border-transparent hover:border-canvas-border transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                        title="Edit"
+                    >
+                        <img className="h-4 w-4" src="./pencil.png" alt="Edit" />
                     </button>
                 )}                
-            </span>
+            </div>
             <div className="flex justify-between mt-1 row-start-2 row-end-2 col-start-2 col-end-2">
                 <span className="text-[10px] text-ui-muted font-mono">
                     Lat/Lng: {point.lat.toFixed(5)}, {point.lng.toFixed(5)}
