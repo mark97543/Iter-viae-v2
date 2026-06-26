@@ -115,7 +115,7 @@ function TacticalMap() {
             />
 
             <LayerControlMenu layerVisibility={layerVisibility} toggleLayer={toggleLayer}/>
-            <LeftBar/>
+            <LeftBar waypoints={waypoints}/>
             <MenuCard 
                 poi={clickedPoi}
                 onAddWaypoint={(poiData) => {

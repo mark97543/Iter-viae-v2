@@ -1,11 +1,16 @@
 import { useState } from "react";
 
-function LeftBar(){
+
+function LeftBar({waypoints}:any){
     const [expandBar, setExpandBar]=useState(true);
 
     const BarSelect=()=>{
         setExpandBar(!expandBar);
     }
+
+
+
+    console.log('Waypoints: ',waypoints);
 
     return(
         <div className={`
@@ -38,10 +43,19 @@ function LeftBar(){
 
                     {/* Content Section */}
                     <div className="flex flex-col gap-3">
-                        <h1 className="text-sm font-bold tracking-wide">Left Bar</h1>
-                        <p className="text-xs text-ui-muted font-mono leading-relaxed">
-                            Use this panel to manage map operations and settings.
-                        </p>
+                        <h1 className="text-sm font-bold tracking-wide">Waypoints</h1>
+
+                        {/* Map Through the Waypoints and display them */}
+                        {waypoints.map((point:any,index:any)=>(
+                            <div key={point.id} className="flex flex-col bg-canvas-border/30 p-2 rounded-md border border-canvas-border">
+                                <span className="text-xs font-bold text-ui-text">
+                                    {index + 1}. {point.name}
+                                </span>
+                                <div className="flex justify-between mt-1">
+                                    <span className="text-[10px] text-ui-muted font-mono">Lat/Lng {point.lat.toFixed(5)}, {point.lng.toFixed(5)}</span>                                </div>
+                            </div>
+                        )) }
+
                     </div>
                 </div>
             ) : (
