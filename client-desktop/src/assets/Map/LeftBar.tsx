@@ -5,6 +5,7 @@ import { CSS } from "@dnd-kit/utilities";
 
 function LeftBar({waypoints, setWaypoints}:any){
     const [expandBar, setExpandBar]=useState(true);
+    
 
     const BarSelect=()=>{
         setExpandBar(!expandBar);
@@ -83,32 +84,44 @@ function LeftBar({waypoints, setWaypoints}:any){
 }
 
 function SortableWaypoint({ point, index }: { point: any; index: number }) {
-    const {
-        attributes,
-        listeners,
-        setNodeRef,
-        transform,
-        transition,
-    } = useSortable({ id: point.id });
+    const {attributes, listeners, setNodeRef, transform, transition,} = useSortable({ id: point.id });
+    const style = {transform: CSS.Transform.toString(transform), transition,};
+    const [edit, setEdit]= useState(false)
 
-    const style = {
-        transform: CSS.Transform.toString(transform),
-        transition,
-    };
+    const editMode = (e:any) =>{
+        e.stopPropagation();
+        setEdit(!edit)
+    }
 
     return (
         <div 
             ref={setNodeRef} 
             style={style} 
             {...attributes} 
-            {...listeners}
-            className="group grid grid-cols-[40px_auto_auto] grid-rows-2 bg-canvas-border/30 p-2 rounded-md border border-canvas-border cursor-grab active:cursor-grabbing hover:bg-canvas-border/50 transition-colors"
+            // {...listeners}
+            className="group grid grid-cols-[40px_auto_auto] grid-rows-2 bg-canvas-border/30 p-2 rounded-md border border-canvas-border  hover:bg-canvas-border/50 transition-colors"
         >
-            <div className="w-[30px] h-[30px] row-span-2 self-center shrink-0 flex items-center justify-center bg-neutral-900 border-2 border-neutral-500 rounded-full text-[15px] font-mono font-bold text-ui-text group-hover:border-red-500 group-hover:text-red-400 transition-colors shadow-sm">
+            <div {...listeners} className="w-[30px] h-[30px] row-span-2 self-center shrink-0 flex items-center justify-center bg-neutral-900 border-2 border-neutral-500 rounded-full text-[15px] font-mono font-bold text-ui-text group-hover:border-red-500 group-hover:text-red-400 transition-colors shadow-sm cursor-grab active:cursor-grabbing">
                 {index + 1}
             </div>
             <span className="text-xs font-bold text-ui-text row-start-1 row-end-1 col-start-2 col-end-2">
                 {point.name}
+            </span>
+            <span>
+                {edit ? (
+                    <div>
+                        <button onClick={(e)=>editMode(e)} className="row-start-1 row-end-1 col-start-3 col-end-3 cursor-pointer">
+                            <img className="h-5 w-5 "  src="./trash.png" />                        
+                        </button>
+                        <button onClick={(e)=>editMode(e)} className="row-start-1 row-end-1 col-start-3 col-end-3 cursor-pointer">
+                            <img className="h-5 w-5" src='./save.png' />
+                        </button>
+                    </div>
+                ):(
+                    <button onClick={(e)=>{editMode(e)}} className="row-start-1 row-end-1 col-start-3 col-end-3 cursor-pointer">
+                        <img className="h-5 w-5 " src="./pencil.png"/>
+                    </button>
+                )}                
             </span>
             <div className="flex justify-between mt-1 row-start-2 row-end-2 col-start-2 col-end-2">
                 <span className="text-[10px] text-ui-muted font-mono">
