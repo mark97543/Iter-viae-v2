@@ -39,7 +39,7 @@ function LeftBar({waypoints, setWaypoints}:LeftBarProps){
             left-2 top-2 z-50 
             bg-canvas-panel/95 
             backdrop-blur-md border 
-            border-canvas-border rounded-xl p-3 
+            border-canvas-border rounded-xl p-3.5 
             text-ui-text flex flex-col items-start justify-start
             overflow-hidden shadow-2xl
             transition-all duration-300 ease-in-out
@@ -47,9 +47,9 @@ function LeftBar({waypoints, setWaypoints}:LeftBarProps){
             `}
         >
             {expandBar ? (
-                <div className="flex flex-col gap-4 w-full min-w-[200px]">
+                <div className="flex flex-col gap-4 w-full h-full max-h-full min-w-[200px]">
                     {/* Header */}
-                    <div className="flex items-center justify-between border-b border-canvas-border pb-2.5">
+                    <div className="flex items-center justify-between border-b border-canvas-border pb-2.5 shrink-0">
                         <span className="text-xs font-mono uppercase tracking-wider text-ui-muted font-bold">
                             Tactical Map
                         </span>
@@ -63,16 +63,17 @@ function LeftBar({waypoints, setWaypoints}:LeftBarProps){
                     </div>
 
                     {/* Content Section */}
-
-                    <div className="flex flex-col gap-3">
-                        <h1 className="text-sm font-bold tracking-wide">Waypoints</h1>
+                    <div className="flex flex-col gap-3 flex-1 min-h-0 overflow-y-auto pr-1">
+                        <h1 className="text-sm font-bold tracking-wide shrink-0">Waypoints</h1>
                         <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                            <SortableContext items={waypoints ? waypoints.map((w: any) => w.id) : []} strategy={verticalListSortingStrategy}>
-                                {/* Map Through the Waypoints and display them */}
-                                {waypoints && waypoints.map((point:any,index:any)=>(
-                                    <SortableWaypoint key={point.id} point={point} index={index} setWaypoints={setWaypoints} editingId={editId} setEditingId={setEditId}/>
-                                )) }
-                            </SortableContext>
+                            <div className="flex flex-col gap-2 pb-4">
+                                <SortableContext items={waypoints ? waypoints.map((w: any) => w.id) : []} strategy={verticalListSortingStrategy}>
+                                    {/* Map Through the Waypoints and display them */}
+                                    {waypoints && waypoints.map((point:any,index:any)=>(
+                                        <SortableWaypoint key={point.id} point={point} index={index} setWaypoints={setWaypoints} editingId={editId} setEditingId={setEditId}/>
+                                    )) }
+                                </SortableContext>
+                            </div>
                         </DndContext>
                     </div>
                 </div>
@@ -94,6 +95,7 @@ function SortableWaypoint({ point, index, setWaypoints, editingId, setEditingId 
     const {attributes, listeners, setNodeRef, transform, transition,} = useSortable({ id: point.id });
     const style = {transform: CSS.Transform.toString(transform), transition,};
     const [name, setName]=useState('');
+    const [copied, setCopied]=useState(false);
 
     //determine if this point is in editing mode
     const isEditing = editingId === point.id;
@@ -110,20 +112,31 @@ function SortableWaypoint({ point, index, setWaypoints, editingId, setEditingId 
         setEditingId(null);
     }
 
+    const copyCoordinates = () => {
+        const coordsText = `${point.lat.toFixed(6)}, ${point.lng.toFixed(6)}`;
+        navigator.clipboard.writeText(coordsText).then(() => {
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        });
+    };
+
     return (
         <div 
             ref={setNodeRef} 
             style={style} 
             {...attributes} 
-            className="group grid grid-cols-[40px_auto_auto] grid-rows-2 bg-canvas-border/30 p-2 rounded-md border border-canvas-border  hover:bg-canvas-border/50 transition-colors"
+            className="group grid grid-cols-[32px_1fr_auto] gap-x-2.5 items-center bg-canvas-panel/40 border border-canvas-border/80 hover:border-canvas-border p-2.5 rounded-lg transition-all"
         >
-            <div {...listeners} className="w-[30px] h-[30px] row-span-2 self-center shrink-0 flex items-center justify-center bg-neutral-900 border-2 border-neutral-500 rounded-full text-[15px] font-mono font-bold text-ui-text group-hover:border-red-500 group-hover:text-red-400 transition-colors shadow-sm cursor-grab active:cursor-grabbing">
+            <div 
+                {...listeners} 
+                className="w-7 h-7 row-span-2 self-center shrink-0 flex items-center justify-center bg-neutral-950 border border-neutral-800 rounded-full text-xs font-mono font-bold text-ui-text group-hover:border-neutral-500 group-hover:bg-neutral-900 transition-all shadow-sm cursor-grab active:cursor-grabbing"
+            >
                 {index + 1}
             </div>
-            <span className="text-xs font-bold text-ui-text row-start-1 row-end-1 col-start-2 col-end-2 flex items-center pr-2">
+            <span className="text-xs font-bold text-ui-text row-start-1 row-end-1 col-start-2 col-end-2 flex items-center pr-1">
                 {isEditing ? (
                     <input 
-                        className="bg-neutral-800 text-ui-text border border-canvas-border rounded px-1.5 py-0.5 w-full text-xs outline-none focus:border-neutral-500"
+                        className="bg-neutral-950/80 text-ui-text border border-neutral-800 focus:border-neutral-600 rounded px-2 py-1 w-full text-xs outline-none transition-colors"
                         placeholder={point.name} 
                         value={name} 
                         onChange={(e)=>setName(e.target.value)}
@@ -133,7 +146,7 @@ function SortableWaypoint({ point, index, setWaypoints, editingId, setEditingId 
                     point.name
                 )}
             </span>
-            <div className="row-start-1 row-end-1 col-start-3 col-end-3 flex items-center gap-1.5 justify-end">
+            <div className="row-start-1 row-end-1 col-start-3 col-end-3 flex items-center gap-1 justify-end">
                 {isEditing ? (
                     <>
                         <button 
@@ -141,7 +154,7 @@ function SortableWaypoint({ point, index, setWaypoints, editingId, setEditingId 
                             className="p-1 rounded hover:bg-canvas-border/80 border border-transparent hover:border-canvas-border transition-colors cursor-pointer"
                             title="Save"
                         >
-                            <img className="h-4 w-4" src="./save.png" alt="Save" />
+                            <img className="h-4 w-4 opacity-80 hover:opacity-100 transition-opacity" src="./save.png" alt="Save" />
                         </button>
                         <button 
                             onClick={() => {
@@ -151,7 +164,7 @@ function SortableWaypoint({ point, index, setWaypoints, editingId, setEditingId 
                             className="p-1 rounded hover:bg-red-500/20 border border-transparent hover:border-canvas-border transition-colors cursor-pointer"
                             title="Delete"
                         >
-                            <img className="h-4 w-4" src="./trash.png" alt="Delete" />
+                            <img className="h-4 w-4 opacity-80 hover:opacity-100 transition-opacity" src="./trash.png" alt="Delete" />
                         </button>
                     </>
                 ):(
@@ -164,14 +177,23 @@ function SortableWaypoint({ point, index, setWaypoints, editingId, setEditingId 
                         className="p-1 rounded hover:bg-canvas-border/80 border border-transparent hover:border-canvas-border transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                         title="Edit"
                     >
-                        <img className="h-4 w-4" src="./pencil.png" alt="Edit" />
+                        <img className="h-4 w-4 opacity-80 hover:opacity-100 transition-opacity" src="./pencil.png" alt="Edit" />
                     </button>
                 )}                
             </div>
-            <div className="flex justify-between mt-1 row-start-2 row-end-2 col-start-2 col-end-2">
-                <span className="text-[10px] text-ui-muted font-mono">
-                    Lat/Lng: {point.lat.toFixed(5)}, {point.lng.toFixed(5)}
-                </span>
+            <div className="flex justify-between mt-1 row-start-2 row-end-2 col-start-2 col-end-4">
+                <button 
+                    onClick={copyCoordinates}
+                    className="text-[10px] text-ui-muted font-mono hover:text-ui-text transition-colors flex items-center gap-1.5 cursor-pointer text-left w-full select-none" >
+                    <span className="truncate">Lat/Lng: {point.lat.toFixed(5)}, {point.lng.toFixed(5)}</span>
+                    {copied ? (
+                        <span className="text-[9px] text-emerald-500 font-semibold flex items-center shrink-0">
+                            ✓ Copied
+                        </span>
+                    ) : (
+                        ''
+                    )}
+                </button>
             </div>
         </div>
     );
