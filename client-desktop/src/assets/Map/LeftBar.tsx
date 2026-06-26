@@ -2,8 +2,14 @@ import { useState } from "react";
 import { DndContext, closestCenter } from "@dnd-kit/core";
 import { arrayMove, SortableContext, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { Waypoint } from "../../Navigation/navigation.types";
 
-function LeftBar({waypoints, setWaypoints}:any){
+interface LeftBarProps{
+    waypoints:Waypoint[];
+    setWaypoints: React.Dispatch<React.SetStateAction<Waypoint[]>>;
+}
+
+function LeftBar({waypoints, setWaypoints}:LeftBarProps){
     const [expandBar, setExpandBar]=useState(true);
     
 
@@ -63,7 +69,7 @@ function LeftBar({waypoints, setWaypoints}:any){
                             <SortableContext items={waypoints ? waypoints.map((w: any) => w.id) : []} strategy={verticalListSortingStrategy}>
                                 {/* Map Through the Waypoints and display them */}
                                 {waypoints && waypoints.map((point:any,index:any)=>(
-                                    <SortableWaypoint key={point.id} point={point} index={index} />
+                                    <SortableWaypoint key={point.id} point={point} index={index} setWaypoints={setWaypoints}/>
                                 )) }
                             </SortableContext>
                         </DndContext>
@@ -83,7 +89,7 @@ function LeftBar({waypoints, setWaypoints}:any){
     )
 }
 
-function SortableWaypoint({ point, index }: { point: any; index: number }) {
+function SortableWaypoint({ point, index, setWaypoints }: { point: any; index: number;setWaypoints:any }) {
     const {attributes, listeners, setNodeRef, transform, transition,} = useSortable({ id: point.id });
     const style = {transform: CSS.Transform.toString(transform), transition,};
     const [edit, setEdit]= useState(false)
@@ -93,12 +99,15 @@ function SortableWaypoint({ point, index }: { point: any; index: number }) {
         setEdit(!edit)
     }
 
+    const deleteItem =(id:string)=>{
+        setWaypoints((prev:Waypoint[]) => prev.filter(wp=>wp.id !==id))
+    }
+
     return (
         <div 
             ref={setNodeRef} 
             style={style} 
             {...attributes} 
-            // {...listeners}
             className="group grid grid-cols-[40px_auto_auto] grid-rows-2 bg-canvas-border/30 p-2 rounded-md border border-canvas-border  hover:bg-canvas-border/50 transition-colors"
         >
             <div {...listeners} className="w-[30px] h-[30px] row-span-2 self-center shrink-0 flex items-center justify-center bg-neutral-900 border-2 border-neutral-500 rounded-full text-[15px] font-mono font-bold text-ui-text group-hover:border-red-500 group-hover:text-red-400 transition-colors shadow-sm cursor-grab active:cursor-grabbing">
@@ -110,7 +119,7 @@ function SortableWaypoint({ point, index }: { point: any; index: number }) {
             <span>
                 {edit ? (
                     <div>
-                        <button onClick={(e)=>editMode(e)} className="row-start-1 row-end-1 col-start-3 col-end-3 cursor-pointer">
+                        <button onClick={(e)=>{editMode(e); deleteItem(point.id)}} className="row-start-1 row-end-1 col-start-3 col-end-3 cursor-pointer">
                             <img className="h-5 w-5 "  src="./trash.png" />                        
                         </button>
                         <button onClick={(e)=>editMode(e)} className="row-start-1 row-end-1 col-start-3 col-end-3 cursor-pointer">
