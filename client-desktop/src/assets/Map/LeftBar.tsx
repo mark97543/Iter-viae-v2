@@ -22,7 +22,7 @@ function LeftBar({waypoints}:any){
             text-ui-text flex flex-col items-start justify-start
             overflow-hidden shadow-2xl
             transition-all duration-300 ease-in-out
-            ${expandBar ? 'w-56 h-[calc(100%-1rem)]' : 'w-12 h-12 p-2'}
+            ${expandBar ? 'w-[300px] h-[calc(100%-1rem)]' : 'w-12 h-12 p-2'}
             `}
         >
             {expandBar ? (
@@ -47,12 +47,15 @@ function LeftBar({waypoints}:any){
 
                         {/* Map Through the Waypoints and display them */}
                         {waypoints.map((point:any,index:any)=>(
-                            <div key={point.id} className="flex flex-col bg-canvas-border/30 p-2 rounded-md border border-canvas-border">
-                                <span className="text-xs font-bold text-ui-text">
-                                    {index + 1}. {point.name}
+                            <div key={point.id} className="grid grid-cols-[40px_auto_auto] grid-rows-2 bg-canvas-border/30 p-2 rounded-md border border-canvas-border">
+                                <div className="w-[30px] h-[30px] row-span-2 self-center shrink-0 flex items-center justify-center bg-neutral-900 border-2 border-neutral-500 rounded-full text-[15px] font-mono font-bold text-ui-text group-hover:border-red-500 group-hover:text-red-400 transition-colors shadow-sm cursor-pointer">
+                                    {index + 1}
+                                </div>
+                                <span className="text-xs font-bold text-ui-text row-start-1 row-end-1 col-start-2 col-end-2">
+                                    {point.name}
                                 </span>
-                                <div className="flex justify-between mt-1">
-                                    <span className="text-[10px] text-ui-muted font-mono">Lat/Lng {point.lat.toFixed(5)}, {point.lng.toFixed(5)}</span>                                </div>
+                                <div className="flex justify-between mt-1 row-start-2 row-end-2 col-start-2 col-end-2">
+                                    <span className="text-[10px] text-ui-muted font-mono">Lat/Lng: {point.lat.toFixed(5)}, {point.lng.toFixed(5)}</span>                                </div>
                             </div>
                         )) }
 
