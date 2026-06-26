@@ -1,14 +1,27 @@
 import { useState } from "react";
+import { DndContext, closestCenter } from "@dnd-kit/core";
+import { arrayMove, SortableContext, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
-
-function LeftBar({waypoints}:any){
+function LeftBar({waypoints, setWaypoints}:any){
     const [expandBar, setExpandBar]=useState(true);
 
     const BarSelect=()=>{
         setExpandBar(!expandBar);
     }
 
+    const handleDragEnd = (event: any) => {
+        const { active, over } = event;
+        if (!over) return;
 
+        if (active.id !== over.id) {
+            const oldIndex = waypoints.findIndex((w: any) => w.id === active.id);
+            const newIndex = waypoints.findIndex((w: any) => w.id === over.id);
+
+            const newOrder = arrayMove(waypoints, oldIndex, newIndex);
+            setWaypoints(newOrder);
+        }
+    };
 
     console.log('Waypoints: ',waypoints);
 
@@ -42,23 +55,17 @@ function LeftBar({waypoints}:any){
                     </div>
 
                     {/* Content Section */}
+
                     <div className="flex flex-col gap-3">
                         <h1 className="text-sm font-bold tracking-wide">Waypoints</h1>
-
-                        {/* Map Through the Waypoints and display them */}
-                        {waypoints.map((point:any,index:any)=>(
-                            <div key={point.id} className="grid grid-cols-[40px_auto_auto] grid-rows-2 bg-canvas-border/30 p-2 rounded-md border border-canvas-border">
-                                <div className="w-[30px] h-[30px] row-span-2 self-center shrink-0 flex items-center justify-center bg-neutral-900 border-2 border-neutral-500 rounded-full text-[15px] font-mono font-bold text-ui-text group-hover:border-red-500 group-hover:text-red-400 transition-colors shadow-sm cursor-pointer">
-                                    {index + 1}
-                                </div>
-                                <span className="text-xs font-bold text-ui-text row-start-1 row-end-1 col-start-2 col-end-2">
-                                    {point.name}
-                                </span>
-                                <div className="flex justify-between mt-1 row-start-2 row-end-2 col-start-2 col-end-2">
-                                    <span className="text-[10px] text-ui-muted font-mono">Lat/Lng: {point.lat.toFixed(5)}, {point.lng.toFixed(5)}</span>                                </div>
-                            </div>
-                        )) }
-
+                        <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                            <SortableContext items={waypoints ? waypoints.map((w: any) => w.id) : []} strategy={verticalListSortingStrategy}>
+                                {/* Map Through the Waypoints and display them */}
+                                {waypoints && waypoints.map((point:any,index:any)=>(
+                                    <SortableWaypoint key={point.id} point={point} index={index} />
+                                )) }
+                            </SortableContext>
+                        </DndContext>
                     </div>
                 </div>
             ) : (
@@ -75,4 +82,41 @@ function LeftBar({waypoints}:any){
     )
 }
 
-export default LeftBar; 
+function SortableWaypoint({ point, index }: { point: any; index: number }) {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+    } = useSortable({ id: point.id });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+    };
+
+    return (
+        <div 
+            ref={setNodeRef} 
+            style={style} 
+            {...attributes} 
+            {...listeners}
+            className="group grid grid-cols-[40px_auto_auto] grid-rows-2 bg-canvas-border/30 p-2 rounded-md border border-canvas-border cursor-grab active:cursor-grabbing hover:bg-canvas-border/50 transition-colors"
+        >
+            <div className="w-[30px] h-[30px] row-span-2 self-center shrink-0 flex items-center justify-center bg-neutral-900 border-2 border-neutral-500 rounded-full text-[15px] font-mono font-bold text-ui-text group-hover:border-red-500 group-hover:text-red-400 transition-colors shadow-sm">
+                {index + 1}
+            </div>
+            <span className="text-xs font-bold text-ui-text row-start-1 row-end-1 col-start-2 col-end-2">
+                {point.name}
+            </span>
+            <div className="flex justify-between mt-1 row-start-2 row-end-2 col-start-2 col-end-2">
+                <span className="text-[10px] text-ui-muted font-mono">
+                    Lat/Lng: {point.lat.toFixed(5)}, {point.lng.toFixed(5)}
+                </span>
+            </div>
+        </div>
+    );
+}
+
+export default LeftBar;

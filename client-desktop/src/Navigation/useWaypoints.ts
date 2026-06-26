@@ -22,7 +22,7 @@ export const useWaypoints = () => {
 
     const clearWaypoints = () =>setWaypoints([]);
 
-    return {addWaypoint, moveWaypoint, waypoints, clearWaypoints}
+    return {addWaypoint, moveWaypoint, waypoints, clearWaypoints, setWaypoints}
 }
 
 //TODO: Need Delete Waypoints 

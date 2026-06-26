@@ -18,7 +18,7 @@ function TacticalMap() {
     const mapRef = useRef<maplibregl.Map | null>(null);
     const [clickedPoi, setClickedPoi]=useState<any | null>(null);
     const [addPoint, setAddPoint]=useState(false);
-    const {waypoints, addWaypoint, moveWaypoint}=useWaypoints();
+    const {waypoints, addWaypoint, moveWaypoint, setWaypoints}=useWaypoints();
     const draftMarkerRef = useRef<maplibregl.Marker | null>(null);
 
     useEffect(() => {
@@ -115,7 +115,7 @@ function TacticalMap() {
             />
 
             <LayerControlMenu layerVisibility={layerVisibility} toggleLayer={toggleLayer}/>
-            <LeftBar waypoints={waypoints}/>
+            <LeftBar waypoints={waypoints} setWaypoints={setWaypoints}/>
             <MenuCard 
                 poi={clickedPoi}
                 onAddWaypoint={(poiData) => {
