@@ -5,93 +5,202 @@ import maplibregl from "maplibre-gl";
 interface WaypointLayerProps {
     map: maplibregl.Map;
     waypoints: Waypoint[];
-    onWaypointMove?: (id: string, lng: number, lat: number) => void;
+    onWaypointMove?: (id: string, newLngLat: {lng: number, lat: number}) => void;
 }
 
 export const WaypointLayer = ({ map, waypoints, onWaypointMove }: WaypointLayerProps) => {
-    // Reference to store active map markers indexed by waypoint ID
-    const markersRef = useRef<{ [id: string]: maplibregl.Marker }>({});
+    const onWaypointMoveRef = useRef(onWaypointMove);
+    const waypointsRef = useRef(waypoints);
 
+    // Track dragging state
+    const dragState = useRef<{ isDragging: boolean; waypointId: string | null }>({
+        isDragging: false,
+        waypointId: null
+    });
+
+    useEffect(() => {
+        onWaypointMoveRef.current = onWaypointMove;
+        waypointsRef.current = waypoints;
+    }, [onWaypointMove, waypoints]);
+
+    // Initialize the WebGL layers and events
     useEffect(() => {
         if (!map) return;
 
-        const currentWaypointIds = new Set(waypoints.map(wp => wp.id));
+        const SOURCE_ID = 'waypoint-source';
+        const CIRCLE_LAYER_ID = 'waypoint-circle-layer';
+        const LABEL_LAYER_ID = 'waypoint-label-layer';
 
-        // 1. Remove markers for waypoints that have been deleted
-        Object.keys(markersRef.current).forEach(id => {
-            if (!currentWaypointIds.has(id)) {
-                markersRef.current[id].remove();
-                delete markersRef.current[id];
+        // Event handlers
+        const onMouseDown = (e: any) => {
+            e.preventDefault();
+            const features = map.queryRenderedFeatures(e.point, { layers: [CIRCLE_LAYER_ID] });
+            if (features.length > 0) {
+                const id = features[0].properties?.id;
+                dragState.current = { isDragging: true, waypointId: id };
+                map.getCanvas().style.cursor = 'grabbing';
+                map.dragPan.disable(); // Stop map panning while dragging marker
             }
-        });
+        };
 
-        // 2. Add or update markers for current waypoints
-        waypoints.forEach(wp => {
-            let marker = markersRef.current[wp.id];
+        const onMouseMoveMap = (e: any) => {
+            if (!dragState.current.isDragging || !dragState.current.waypointId) return;
 
-            if (!marker) {
-                // Create custom DOM element for the tactical waypoint marker
-                const el = document.createElement('div');
-                el.className = 'custom-waypoint-marker';
-                el.style.display = 'flex';
-                el.style.flexDirection = 'column';
-                el.style.alignItems = 'center';
-                el.style.cursor = 'grab';
+            const updatedFeatures = waypointsRef.current.map(wp => {
+                if (wp.id === dragState.current.waypointId) {
+                    return {
+                        type: 'Feature',
+                        geometry: { type: 'Point', coordinates: [e.lngLat.lng, e.lngLat.lat] },
+                        properties: { id: wp.id, name: wp.name }
+                    };
+                }
+                return {
+                    type: 'Feature',
+                    geometry: { type: 'Point', coordinates: [wp.coord.lng, wp.coord.lat] },
+                    properties: { id: wp.id, name: wp.name }
+                };
+            });
 
-                // Red circle dot
-                const dot = document.createElement('div');
-                dot.style.width = '12px';
-                dot.style.height = '12px';
-                dot.style.borderRadius = '50%';
-                dot.style.backgroundColor = '#DC2626'; // Tactical Red
-                dot.style.border = '2px solid #FFFFFF'; // High contrast outline
-                dot.style.boxShadow = '0 2px 4px rgba(0,0,0,0.5)';
-                el.appendChild(dot);
-
-                // Monospace text label
-                const label = document.createElement('div');
-                label.innerText = wp.name;
-                label.style.color = '#FFFFFF';
-                label.style.fontSize = '11px';
-                label.style.fontWeight = 'bold';
-                label.style.fontFamily = 'monospace';
-                label.style.marginTop = '4px';
-                // Standard GIS halo text-shadow
-                label.style.textShadow = '1px 1px 0 #0A0A0A, -1px -1px 0 #0A0A0A, 1px -1px 0 #0A0A0A, -1px 1px 0 #0A0A0A';
-                label.style.whiteSpace = 'nowrap';
-                el.appendChild(label);
-
-                // Create the draggable Marker
-                marker = new maplibregl.Marker({
-                    element: el,
-                    draggable: true,
-                    offset: [0, 6] // Center offset
-                })
-                .setLngLat([wp.lng, wp.lat])
-                .addTo(map);
-
-                // Bind drag event to update state coordinates
-                marker.on('dragend', () => {
-                    const newLngLat = marker.getLngLat();
-                    onWaypointMove?.(wp.id, newLngLat.lng, newLngLat.lat);
+            const source = map.getSource(SOURCE_ID) as maplibregl.GeoJSONSource;
+            if (source) {
+                source.setData({
+                    type: 'FeatureCollection',
+                    features: updatedFeatures as any
                 });
+            }
+        };
 
-                markersRef.current[wp.id] = marker;
-            } else {
-                // If coordinates changed externally, update marker position
-                const currentLngLat = marker.getLngLat();
-                if (Math.abs(currentLngLat.lng - wp.lng) > 1e-7 || Math.abs(currentLngLat.lat - wp.lat) > 1e-7) {
-                    marker.setLngLat([wp.lng, wp.lat]);
+        const onMouseUpMap = (e: any) => {
+            if (dragState.current.isDragging && dragState.current.waypointId) {
+                const id = dragState.current.waypointId;
+                const lng = e.lngLat.lng;
+                const lat = e.lngLat.lat;
+
+                dragState.current = { isDragging: false, waypointId: null };
+                map.getCanvas().style.cursor = '';
+                map.dragPan.enable();
+
+                if (onWaypointMoveRef.current) {
+                    onWaypointMoveRef.current(id, { lng, lat });
                 }
             }
-        });
-
-        // Cleanup: remove all markers when component unmounts
-        return () => {
-            Object.values(markersRef.current).forEach(marker => marker.remove());
-            markersRef.current = {};
         };
-    }, [waypoints, map, onWaypointMove]);
+
+        const onMouseEnter = () => {
+            if (!dragState.current.isDragging) {
+                map.getCanvas().style.cursor = 'grab';
+            }
+        };
+
+        const onMouseLeave = () => {
+            if (!dragState.current.isDragging) {
+                map.getCanvas().style.cursor = '';
+            }
+        };
+
+        const updateSourceData = (currentWaypoints: Waypoint[]) => {
+            const source = map.getSource(SOURCE_ID) as maplibregl.GeoJSONSource;
+            if (source) {
+                source.setData({
+                    type: 'FeatureCollection',
+                    features: currentWaypoints.map(wp => ({
+                        type: 'Feature',
+                        geometry: { type: 'Point', coordinates: [wp.coord.lng, wp.coord.lat] },
+                        properties: { id: wp.id, name: wp.name }
+                    }))
+                });
+            }
+        };
+
+        const initLayers = () => {
+            if (!map.getSource(SOURCE_ID)) {
+                map.addSource(SOURCE_ID, {
+                    type: 'geojson',
+                    data: { type: 'FeatureCollection', features: [] }
+                });
+
+                map.addLayer({
+                    id: CIRCLE_LAYER_ID,
+                    type: 'circle',
+                    source: SOURCE_ID,
+                    paint: {
+                        'circle-radius': 6,
+                        'circle-color': '#DC2626',
+                        'circle-stroke-width': 2,
+                        'circle-stroke-color': '#FFFFFF'
+                    }
+                });
+
+                map.addLayer({
+                    id: LABEL_LAYER_ID,
+                    type: 'symbol',
+                    source: SOURCE_ID,
+                    layout: {
+                        'text-field': ['get', 'name'],
+                        'text-size': 11,
+                        'text-offset': [0, 1.2],
+                        'text-anchor': 'top'
+                    },
+                    paint: {
+                        'text-color': '#FFFFFF',
+                        'text-halo-color': '#0A0A0A',
+                        'text-halo-width': 1.5
+                    }
+                });
+
+                // Attach events
+                map.on('mousedown', CIRCLE_LAYER_ID, onMouseDown);
+                map.on('mousemove', onMouseMoveMap);
+                map.on('mouseup', onMouseUpMap);
+                map.on('mouseenter', CIRCLE_LAYER_ID, onMouseEnter);
+                map.on('mouseleave', CIRCLE_LAYER_ID, onMouseLeave);
+
+                // Immediately populate data if waypoints exist
+                updateSourceData(waypointsRef.current);
+            }
+        };
+
+        // Check if map is fully loaded (sometimes map.loaded() is false during strict mode initialization)
+        // map.isStyleLoaded() is often a safer check for adding sources
+        if (map.isStyleLoaded()) {
+            initLayers();
+        } else {
+            map.once('load', initLayers);
+        }
+
+        // Cleanup
+        return () => {
+            map.off('mousedown', CIRCLE_LAYER_ID, onMouseDown);
+            map.off('mousemove', onMouseMoveMap);
+            map.off('mouseup', onMouseUpMap);
+            map.off('mouseenter', CIRCLE_LAYER_ID, onMouseEnter);
+            map.off('mouseleave', CIRCLE_LAYER_ID, onMouseLeave);
+
+            try {
+                if (map.getLayer(CIRCLE_LAYER_ID)) map.removeLayer(CIRCLE_LAYER_ID);
+                if (map.getLayer(LABEL_LAYER_ID)) map.removeLayer(LABEL_LAYER_ID);
+                if (map.getSource(SOURCE_ID)) map.removeSource(SOURCE_ID);
+            } catch (e) { }
+        };
+    }, [map]);
+
+    // Update GeoJSON when waypoints change externally (unless we are actively dragging)
+    useEffect(() => {
+        if (!map || dragState.current.isDragging) return;
+
+        const SOURCE_ID = 'waypoint-source';
+        const source = map.getSource(SOURCE_ID) as maplibregl.GeoJSONSource;
+        if (source) {
+            source.setData({
+                type: 'FeatureCollection',
+                features: waypoints.map(wp => ({
+                    type: 'Feature',
+                    geometry: { type: 'Point', coordinates: [wp.coord.lng, wp.coord.lat] },
+                    properties: { id: wp.id, name: wp.name }
+                }))
+            });
+        }
+    }, [waypoints, map]);
 
     return null; // Side-effect component, renders nothing in React DOM
 };

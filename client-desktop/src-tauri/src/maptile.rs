@@ -1,4 +1,3 @@
-//maptile.rs
 use chrono::NaiveDate;
 use futures_util::StreamExt;
 use reqwest::Client;
@@ -7,9 +6,7 @@ use serde_json::Value;
 use std::fs::{self, File};
 use std::io::Write;
 use std::path::Path;
-use tauri::{
-    AppHandle, Emitter, Manager,
-};
+use tauri::{AppHandle, Emitter, Manager};
 
 // --- Structs for Data ---
 #[derive(Clone, Serialize)]
@@ -25,6 +22,12 @@ pub struct LocalMapStatus {
     pub date: Option<String>,
 }
 
+#[derive(Serialize)]
+pub struct MapFile {
+    pub name: String,
+    pub path: String,
+    pub is_routing: bool,
+}
 
 // --- Helper Functions ---
 pub fn get_filename_from_url(url: &str) -> Result<String, String> {
@@ -41,7 +44,6 @@ pub fn get_region_from_filename(filename: &str) -> Option<&str> {
 
 // --- Commands ---
 
-// Fetch data from Directus API
 #[tauri::command]
 pub async fn fetch_directus_data(endpoint: String) -> Result<Value, String> {
     let full_url = format!("https://api.wade-usa.com{}", endpoint);
@@ -57,7 +59,6 @@ pub async fn fetch_directus_data(endpoint: String) -> Result<Value, String> {
     Ok(response)
 }
 
-// Download and stream map file to AppData
 #[tauri::command]
 pub async fn download_map(app_handle: AppHandle, url: String) -> Result<String, String> {
     let file_name = get_filename_from_url(&url)?;
@@ -90,66 +91,54 @@ pub async fn download_map(app_handle: AppHandle, url: String) -> Result<String, 
     Ok(file_name)
 }
 
-// Simple check for file existence
 #[tauri::command]
-pub fn check_file_exists(app: AppHandle, url: String) -> bool {
-    let file_name = match get_filename_from_url(&url) {
-        Ok(name) => name,
-        Err(_) => return false,
-    };
-    app.path().app_data_dir()
-        .map(|dir| dir.join("maps").join(file_name).exists())
-        .unwrap_or(false)
+pub async fn download_region_bundle(app_handle: AppHandle, mbtiles_url: String, routing_url: String) -> Result<(), String> {
+    download_map(app_handle.clone(), mbtiles_url).await?;
+    download_map(app_handle, routing_url).await?;
+    Ok(())
 }
 
-// Check which map version is most recent on local disk
 #[tauri::command]
-pub fn check_most_recent_map(app: AppHandle, url: String) -> LocalMapStatus {
-    let file_name = match get_filename_from_url(&url) {
+pub fn check_region_bundle(app: AppHandle, mbtiles_url: String, routing_url: String) -> LocalMapStatus {
+    let mbtiles_name = match get_filename_from_url(&mbtiles_url) {
+        Ok(name) => name,
+        Err(_) => return LocalMapStatus { is_found: false, file_name: None, date: None },
+    };
+    let routing_name = match get_filename_from_url(&routing_url) {
         Ok(name) => name,
         Err(_) => return LocalMapStatus { is_found: false, file_name: None, date: None },
     };
 
-    let region = match get_region_from_filename(&file_name) {
-        Some(r) => r,
-        None => return LocalMapStatus { is_found: false, file_name: None, date: None },
-    };
-    
-    let map_dir = app.path().app_data_dir().ok().unwrap().join("maps");
-    let paths = match fs::read_dir(map_dir) {
-        Ok(p) => p,
-        Err(_) => return LocalMapStatus { is_found: false, file_name: None, date: None },
-    };
+    let maps_dir = app.path().app_data_dir().unwrap().join("maps");
 
-    let mut files: Vec<(NaiveDate, String)> = Vec::new();
-    for path in paths.filter_map(|e| e.ok()) {
-        let name = path.file_name().into_string().unwrap_or_default();
-        if name.starts_with(&format!("{}-", region)) && name.ends_with(".mbtiles") {
-            if let Some(date_part) = name.split('-').nth(1).and_then(|p| p.split('.').next()) {
-                if let Ok(date) = NaiveDate::parse_from_str(date_part, "%y%m%d") {
-                    files.push((date, name));
-                }
-            }
+    if maps_dir.join(&mbtiles_name).exists() && maps_dir.join(&routing_name).exists() {
+        // Extract YYMMDD so React knows if it needs to trigger an UPDATE
+        let date = mbtiles_name.split('-').nth(1).and_then(|p| p.split('.').next()).map(|s| s.to_string());
+        LocalMapStatus {
+            is_found: true,
+            file_name: Some(mbtiles_name),
+            date,
         }
-    }
-
-    files.sort_by(|a, b| b.0.cmp(&a.0));
-
-    match files.into_iter().next() {
-        Some((date, name)) => LocalMapStatus { 
-            is_found: true, 
-            file_name: Some(name), 
-            date: Some(date.format("%y%m%d").to_string()) 
-        },
-        None => LocalMapStatus { is_found: false, file_name: None, date: None },
+    } else {
+        LocalMapStatus { is_found: false, file_name: None, date: None }
     }
 }
 
-// Cleanup old map versions
 #[tauri::command]
-pub fn delete_old_maps(app: AppHandle, new_url: String) -> Result<(), String> {
-    let new_file_name = get_filename_from_url(&new_url)?;
-    let region_prefix = get_region_from_filename(&new_file_name).ok_or("Invalid region")?;
+pub fn delete_region_bundle(app: AppHandle, mbtiles_name: String, routing_name: String) -> Result<(), String> {
+    let maps_dir = app.path().app_data_dir().map_err(|e| e.to_string())?.join("maps");
+    
+    let _ = fs::remove_file(maps_dir.join(&mbtiles_name));
+    let _ = fs::remove_file(maps_dir.join(&routing_name));
+    
+    Ok(())
+}
+
+#[tauri::command]
+pub fn delete_old_region_bundle(app: AppHandle, new_mbtiles_url: String, new_routing_url: String) -> Result<(), String> {
+    let new_mbtiles_name = get_filename_from_url(&new_mbtiles_url)?;
+    let new_routing_name = get_filename_from_url(&new_routing_url)?;
+    let prefix = get_region_from_filename(&new_mbtiles_name).ok_or("Invalid region")?;
     
     let map_dir = app.path().app_data_dir().map_err(|e| e.to_string())?.join("maps");
     let paths = fs::read_dir(map_dir).map_err(|e| e.to_string())?;
@@ -158,29 +147,17 @@ pub fn delete_old_maps(app: AppHandle, new_url: String) -> Result<(), String> {
         let path = entry.path();
         let file_name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
         
-        if file_name.starts_with(&format!("{}-", region_prefix)) && file_name != new_file_name {
+        // Delete any files with this region's prefix that ARE NOT the new files
+        if file_name.starts_with(&format!("{}-", prefix)) 
+            && file_name != new_mbtiles_name 
+            && file_name != new_routing_name 
+        {
             let _ = fs::remove_file(path);
         }
     }
     Ok(())
 }
 
-
-//Delete Map
-#[tauri::command]
-pub fn delete_map(app: AppHandle, file_name: String) -> Result<(), String> {
-    let mut path = app.path().app_data_dir().map_err(|e| e.to_string())?;
-    path.push("maps");
-    path.push(&file_name);
-    
-    if path.exists() {
-        fs::remove_file(path).map_err(|e| e.to_string())
-    } else {
-        Err("File not found".to_string())
-    }
-}
-
-//Pull all mapfiles in
 #[tauri::command]
 pub fn list_maps(app: tauri::AppHandle) -> Vec<String> {
     let mut maps_dir = match app.path().app_data_dir() {
@@ -204,22 +181,36 @@ pub fn list_maps(app: tauri::AppHandle) -> Vec<String> {
 }
 
 #[tauri::command]
-pub fn get_local_maps(app: tauri::AppHandle) -> Vec<String> {
-    let mut maps_dir = match app.path().app_data_dir() {
-        Ok(dir) => dir,
-        Err(_) => return vec![],
-    };
-    maps_dir.push("maps");
-
-    if !maps_dir.exists() {
-        return vec![];
-    }
-
-    std::fs::read_dir(maps_dir)
+pub fn get_local_maps(app: tauri::AppHandle) -> Vec<MapFile> {
+    let maps_dir = app.path().app_data_dir().unwrap().join("maps");
+    
+    fs::read_dir(maps_dir)
         .map(|entries| {
             entries.filter_map(|e| e.ok())
-                .map(|e| e.file_name().to_string_lossy().into_owned())
-                .filter(|name| name.ends_with(".mbtiles"))
+                .filter(|e| e.path().extension().and_then(|s| s.to_str()) == Some("mbtiles"))
+                .map(|e| MapFile {
+                    name: e.file_name().to_string_lossy().into_owned(),
+                    path: e.path().to_string_lossy().into_owned(),
+                    is_routing: false,
+                })
+                .collect()
+        })
+        .unwrap_or_else(|_| vec![])
+}
+
+#[tauri::command]
+pub fn get_local_routing_tiles(app: tauri::AppHandle) -> Vec<MapFile> {
+    let maps_dir = app.path().app_data_dir().unwrap().join("maps");
+    
+    fs::read_dir(maps_dir)
+        .map(|entries| {
+            entries.filter_map(|e| e.ok())
+                .filter(|e| e.path().extension().and_then(|s| s.to_str()) == Some("tar"))
+                .map(|e| MapFile {
+                    name: e.file_name().to_string_lossy().into_owned(),
+                    path: e.path().to_string_lossy().into_owned(),
+                    is_routing: true,
+                })
                 .collect()
         })
         .unwrap_or_else(|_| vec![])

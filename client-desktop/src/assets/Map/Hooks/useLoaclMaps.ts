@@ -7,7 +7,7 @@ export const useLocalMaps = () =>{
 
     const fetchMaps = async () => {
         try {
-            const files = await invoke<string[]>('get_local_maps');
+            const files = await invoke<string[]>('list_maps');
             console.log("TacticalMap updated mapFiles list:", files);
             setMapFiles(files);
         } catch (err) {

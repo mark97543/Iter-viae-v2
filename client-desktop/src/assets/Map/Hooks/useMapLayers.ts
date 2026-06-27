@@ -29,7 +29,7 @@ export const useMapLayers = (
                 type: 'vector',
                 tiles: [`http://localhost:8080/tiles/${sourceId}/{z}/{x}/{y}`],
                 minzoom: 0,
-                maxzoom: 16
+                maxzoom: 14 // OpenMapTiles usually stops at 14. Setting this allows infinite overzooming without 404s.
             });
         }
 

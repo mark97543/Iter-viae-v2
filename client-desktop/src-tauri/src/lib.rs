@@ -4,6 +4,7 @@ use crate::menu::create_menu;
 pub mod menu;
 pub mod maptile;
 pub mod tile_server;
+pub mod routing;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -11,12 +12,16 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             maptile::fetch_directus_data,
             maptile::download_map,
-            maptile::check_file_exists,
-            maptile::check_most_recent_map,
-            maptile::delete_old_maps,
-            maptile::delete_map,
             maptile::list_maps,
-            maptile::get_local_maps
+            maptile::get_local_maps,
+            maptile::get_local_routing_tiles,
+            maptile::check_region_bundle,
+            maptile::download_region_bundle,
+            routing::calculate_route,
+            maptile::download_region_bundle,
+            maptile::check_region_bundle,
+            maptile::delete_region_bundle,
+            maptile::delete_old_region_bundle,
         ])
         .setup(|app| {
             let _ = app.set_menu(create_menu(app.handle()).unwrap());

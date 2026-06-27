@@ -14,3 +14,17 @@
 .maplibregl-ctrl-attrib {
     display: none !important;
 }
+
+/* Force hardware acceleration to sync HTML markers with the WebGL canvas on Linux */
+.maplibregl-marker {
+    will-change: transform !important;
+    backface-visibility: hidden !important;
+    transform-style: preserve-3d !important;
+    -webkit-backface-visibility: hidden !important;
+}
+
+.custom-waypoint-marker {
+    will-change: transform !important;
+    backface-visibility: hidden !important;
+    -webkit-backface-visibility: hidden !important;
+}

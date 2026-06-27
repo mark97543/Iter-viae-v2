@@ -7,8 +7,8 @@ import { listen, emit } from '@tauri-apps/api/event';
 // ==========================================
 
 // Props for opening/closing the modal from the parent app
-interface ModalProps { 
-    onClose: () => void; 
+interface ModalProps {
+    onClose: () => void;
 }
 
 // The exact structure of the map data coming from your Directus cloud
@@ -17,26 +17,27 @@ interface MapRegion {
     name: string;
     parent_region: string;
     file_size_mb: string | number;
-    file_url: string;
     date_updated: string; // Directus timestamp
+    MBTiles_URL: string;
+    Routing_URL: string;
 }
 
 // The response structure from your Rust backend when checking the local disk
-interface LocalMapStatus { 
-    is_found: boolean; 
-    file_name: string | null; 
-    date: string | null; 
+interface LocalMapStatus {
+    is_found: boolean;
+    file_name: string | null;
+    date: string | null;
 }
 
 // The payload sent continuously by Rust during a download
-interface DownloadProgress { 
-    file_name: string; 
-    percentage: number; 
+interface DownloadProgress {
+    file_name: string;
+    percentage: number;
 }
 
 // Wrapper for the Directus API response
-interface DirectusResponse { 
-    data: MapRegion[]; 
+interface DirectusResponse {
+    data: MapRegion[];
 }
 
 
@@ -46,43 +47,56 @@ interface DirectusResponse {
 // By isolating each row into its own component, we ensure that when one map 
 // is downloading, only THIS row re-renders, preventing the whole table from lagging.
 
-function MapRow({ map, onDownloadStart, onDownloadEnd }:{map:MapRegion; onDownloadStart: () => void; onDownloadEnd: () => void;}) {
+function MapRow({ map, onDownloadStart, onDownloadEnd }: { map: MapRegion; onDownloadStart: () => void; onDownloadEnd: () => void; }) {
     // State machine for the row's lifecycle
     const [status, setStatus] = useState<"DOWNLOAD" | "UPDATE" | "READY" | "DOWNLOADING">("DOWNLOAD");
-    
-    // Tracks the 0-100 percentage of the active download
-    const [progress, setProgress] = useState(0);
 
-    // We isolate the filename from the Directus URL. 
-    // Example: "https://api.com/idaho-260611.mbtiles" -> "idaho-260611.mbtiles"
-    const fileName = map.file_url.split('/').pop() || "";
-    
+    // Tracks the 0-100 percentage of the active downloads
+    const [progress, setProgress] = useState({ mbtiles: 0, routing: 0 });
+
+    // We isolate the filenames from the Directus URLs. 
+    const mbtilesName = map.MBTiles_URL.split('/').pop() || "";
+    const routingName = map.Routing_URL.split('/').pop() || "";
+
     // Extract the YYMMDD target date from the file name itself for accurate comparison
     // Example: "idaho-260611.mbtiles" -> "260611"
-    const targetDate = fileName.split('-')[1]?.split('.')[0] || ""; 
+    const targetDate = mbtilesName.split('-')[1]?.split('.')[0] || "";
 
     // -- LIFECYCLE: ON MOUNT --
     useEffect(() => {
         // 1. Set up the Inter-Process Communication (IPC) listener to hear from Rust
         const unlisten = listen<DownloadProgress>('download-progress', (event) => {
             // ONLY update this specific row's progress if the filename matches!
-            if (event.payload.file_name === fileName) {
-                setProgress(event.payload.percentage);
-                
-                // If it hits 100%, automatically switch the UI to "READY"
-                if (event.payload.percentage >= 100) {
-                    setStatus("READY");
-                    onDownloadEnd();
-                }
+            if (event.payload.file_name === mbtilesName) {
+                setProgress(prev => {
+                    const next = { ...prev, mbtiles: event.payload.percentage };
+                    if (next.mbtiles >= 100 && next.routing >= 100) {
+                        setStatus("READY");
+                        onDownloadEnd();
+                    }
+                    return next;
+                });
+            } else if (event.payload.file_name === routingName) {
+                setProgress(prev => {
+                    const next = { ...prev, routing: event.payload.percentage };
+                    if (next.mbtiles >= 100 && next.routing >= 100) {
+                        setStatus("READY");
+                        onDownloadEnd();
+                    }
+                    return next;
+                });
             }
         });
 
-        // 2. Ask Rust: "Does this map exist on the hard drive, and is it up to date?"
+        // 2. Ask Rust: "Do BOTH files exist on the hard drive, and are they up to date?"
         const fetchStatus = async () => {
             try {
-                // Call the Rust command we built earlier
-                const res = await invoke<LocalMapStatus>("check_most_recent_map", { url: map.file_url });
-                
+                // Call the new Rust command for checking bundles
+                const res = await invoke<LocalMapStatus>("check_region_bundle", {
+                    mbtilesUrl: map.MBTiles_URL,
+                    routingUrl: map.Routing_URL
+                });
+
                 // Compare the pure YYMMDD strings directly
                 if (!res.is_found) {
                     setStatus("DOWNLOAD"); // File doesn't exist at all
@@ -91,7 +105,7 @@ function MapRow({ map, onDownloadStart, onDownloadEnd }:{map:MapRegion; onDownlo
                 } else {
                     setStatus("READY"); // File exists and is the latest version
                 }
-            } catch { 
+            } catch {
                 setStatus("DOWNLOAD"); // Failsafe fallback
             }
         };
@@ -100,7 +114,7 @@ function MapRow({ map, onDownloadStart, onDownloadEnd }:{map:MapRegion; onDownlo
 
         // 3. Cleanup function: destroys the listener when the row unmounts to prevent memory leaks
         return () => { unlisten.then(f => f()); };
-    }, [map, fileName, targetDate]);
+    }, [map, mbtilesName, routingName, targetDate]);
 
 
     // -- ACTION HANDLER --
@@ -111,25 +125,25 @@ function MapRow({ map, onDownloadStart, onDownloadEnd }:{map:MapRegion; onDownlo
             setStatus("DOWNLOADING");
             onDownloadStart();
         }
-        setProgress(0); // Reset progress bar
+        setProgress({ mbtiles: 0, routing: 0 }); // Reset progress bars
 
         try {
             if (action === "UPDATE") {
                 // Clear the old stale files off the disk first
-                await invoke("delete_old_maps", { newUrl: map.file_url });
+                await invoke("delete_old_region_bundle", { newMbtilesUrl: map.MBTiles_URL, newRoutingUrl: map.Routing_URL });
                 // Then pull the new one
-                await invoke("download_map", { url: map.file_url });
-            } 
+                await invoke("download_region_bundle", { mbtilesUrl: map.MBTiles_URL, routingUrl: map.Routing_URL });
+            }
             else if (action === "DELETE") {
-                // Tell Rust to delete this specific file
-                await invoke("delete_map", { fileName });
+                // Tell Rust to delete this specific bundle
+                await invoke("delete_region_bundle", { mbtilesName, routingName });
                 // Reset UI back to download state
                 setStatus("DOWNLOAD");
                 await emit('map-downloaded');
-            } 
+            }
             else {
                 // Standard initial download
-                await invoke("download_map", { url: map.file_url });
+                await invoke("download_region_bundle", { mbtilesUrl: map.MBTiles_URL, routingUrl: map.Routing_URL });
             }
 
             //Emit the event when the process finishes successfully
@@ -146,31 +160,44 @@ function MapRow({ map, onDownloadStart, onDownloadEnd }:{map:MapRegion; onDownlo
     // -- RENDER ROW --
     return (
         <tr className="border-b border-white/10 hover:bg-white/5 transition-colors">
-            
+
             {/* Map Metadata Columns */}
             <td className='p-3 uppercase text-gray-300 font-semibold tracking-wider text-sm'>{map.parent_region}</td>
             <td className='p-3 text-white'>{map.name}</td>
             <td className='p-3 text-gray-400 text-sm'>{map.file_size_mb} MB</td>
-            
+
             {/* Interactive Actions Column */}
             <td className='p-3 min-w-[250px]'>
-                
-                {/* STATE 1: Actively Downloading -> Show Progress Bar */}
+
+                {/* STATE 1: Actively Downloading -> Show Progress Bars */}
                 {status === "DOWNLOADING" ? (
-                    <div className="flex items-center gap-3 w-full max-w-[200px]">
-                        <div className="w-full bg-gray-800 rounded-full h-2.5 overflow-hidden border border-gray-700">
-                            <div 
-                                className="bg-tactical-red h-2.5 rounded-full transition-all duration-300 ease-out" 
-                                style={{ width: `${progress}%` }}
-                            ></div>
+                    <div className="flex flex-col gap-2 w-full max-w-[200px]">
+                        {/* Visuals Progress Bar */}
+                        <div className="flex items-center gap-2">
+                            <span className="text-[10px] text-gray-400 font-mono w-14">Visuals</span>
+                            <div className="w-full bg-gray-800 rounded-full h-2 overflow-hidden border border-gray-700">
+                                <div
+                                    className="bg-blue-500 h-2 rounded-full transition-all duration-300 ease-out"
+                                    style={{ width: `${progress.mbtiles}%` }}
+                                ></div>
+                            </div>
                         </div>
-                        <span className="text-xs text-gray-300 font-mono w-8">{progress}%</span>
+                        {/* Routing Progress Bar */}
+                        <div className="flex items-center gap-2">
+                            <span className="text-[10px] text-gray-400 font-mono w-14">Routing</span>
+                            <div className="w-full bg-gray-800 rounded-full h-2 overflow-hidden border border-gray-700">
+                                <div
+                                    className="bg-tactical-red h-2 rounded-full transition-all duration-300 ease-out"
+                                    style={{ width: `${progress.routing}%` }}
+                                ></div>
+                            </div>
+                        </div>
                     </div>
                 ) : (
-                    
+
                     /* STATE 2: Idle (Ready, Download, or Update) -> Show Buttons */
                     <div className="flex items-center gap-3">
-                        
+
                         {/* Primary Action Button / Badge */}
                         {status === "READY" ? (
                             // READY BADGE: Not a button, just a sleek green status indicator
@@ -180,7 +207,7 @@ function MapRow({ map, onDownloadStart, onDownloadEnd }:{map:MapRegion; onDownlo
                             </span>
                         ) : (
                             // DOWNLOAD / UPDATE BUTTON: Primary red tactical button
-                            <button 
+                            <button
                                 onClick={() => handleAction(status === "UPDATE" ? "UPDATE" : "DOWNLOAD")}
                                 className="px-4 py-1.5 bg-tactical-red hover:bg-red-700 text-white rounded text-sm font-bold uppercase tracking-wide transition-colors shadow-lg shadow-red-900/20"
                             >
@@ -190,8 +217,8 @@ function MapRow({ map, onDownloadStart, onDownloadEnd }:{map:MapRegion; onDownlo
 
                         {/* Secondary Action: Delete Button (Only shows if map is already on the drive) */}
                         {status !== "DOWNLOAD" && (
-                            <button 
-                                onClick={() => handleAction("DELETE")} 
+                            <button
+                                onClick={() => handleAction("DELETE")}
                                 className="px-3 py-1.5 text-xs text-gray-400 hover:text-red-400 border border-transparent hover:border-red-900/50 hover:bg-red-900/20 rounded transition-all"
                                 title="Remove from device"
                             >
@@ -214,14 +241,14 @@ export default function LoadMapModal({ onClose }: ModalProps) {
     // Stores the master list of all available maps from Directus
     const [mapData, setMapData] = useState<MapRegion[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [activeDownloads, setActiveDownloads]=useState(0);
+    const [activeDownloads, setActiveDownloads] = useState(0);
 
     // Fetch the directory from your cloud API when the modal opens
     useEffect(() => {
         const load = async () => {
             try {
-                const res = await invoke<DirectusResponse>('fetch_directus_data', { 
-                    endpoint: '/items/map_regions?sort=name' 
+                const res = await invoke<DirectusResponse>('fetch_directus_data', {
+                    endpoint: '/items/map_regions?sort=name'
                 });
                 setMapData(res.data);
             } catch (error) {
@@ -236,10 +263,10 @@ export default function LoadMapModal({ onClose }: ModalProps) {
     return (
         // The dark, blurred backdrop
         <div className='fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm'>
-            
+
             {/* The primary modal window */}
             <div className='flex flex-col bg-canvas-panel border border-neutral-800 w-[90%] max-w-4xl h-[85vh] rounded-xl shadow-2xl overflow-hidden'>
-                
+
                 {/* Header Section */}
                 <div className="p-6 border-b border-neutral-800 bg-black/20 flex justify-between items-center">
                     <div>
@@ -272,9 +299,9 @@ export default function LoadMapModal({ onClose }: ModalProps) {
                             <tbody>
                                 {/* Render a dedicated, self-managing row for every map */}
                                 {mapData.map((map) => (
-                                    <MapRow 
-                                        key={map.id} 
-                                        map={map} 
+                                    <MapRow
+                                        key={map.id}
+                                        map={map}
                                         onDownloadStart={() => setActiveDownloads(prev => prev + 1)}
                                         onDownloadEnd={() => setActiveDownloads(prev => prev - 1)}
                                     />
@@ -283,13 +310,13 @@ export default function LoadMapModal({ onClose }: ModalProps) {
                         </table>
                     )}
                 </div>
-                
+
                 {/* Footer Section */}
                 <div className="p-4 border-t border-neutral-800 bg-black/20 flex justify-center">
-                    <button 
-                        className='px-8 py-2.5 bg-neutral-800 hover:bg-neutral-700 text-white rounded-lg cursor-pointer font-bold tracking-wide transition-colors border border-neutral-700' 
+                    <button
+                        className='px-8 py-2.5 bg-neutral-800 hover:bg-neutral-700 text-white rounded-lg cursor-pointer font-bold tracking-wide transition-colors border border-neutral-700'
                         onClick={onClose}
-                        disabled={activeDownloads>0}
+                        disabled={activeDownloads > 0}
                     >
                         {activeDownloads > 0 ? "Wait For Downloads" : "Return to Cockpit"}
                     </button>
@@ -300,4 +327,4 @@ export default function LoadMapModal({ onClose }: ModalProps) {
 }
 
 //TODO: Add a total Diskspace tot he modal
-//TODO: Add a search feature to the modal. 
+//TODO: Add a search feature to the modal.
