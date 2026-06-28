@@ -10,70 +10,55 @@ import LeftBar from './LeftBar';
 import AddPoint from './Menus/AddPoint';
 import { WaypointLayer } from '../../Navigation/WaypointLayer';
 import { useTripContext } from '../../hooks/trip/TripContext';
+import { useMapController } from '../../hooks/map/useMapController';
 
 function TacticalMap() {
-    const mapContainer = useRef<HTMLDivElement>(null);
+    const { mapContainer, map, isReady } = useMapController();
     const mapFiles = useLocalMaps();
     const { layerVisibility, toggleLayer } = useLayerToggles();
-    const mapRef = useRef<maplibregl.Map | null>(null);
     const [clickedPoi, setClickedPoi] = useState<any | null>(null);
     const [addPoint, setAddPoint] = useState(false);
     const draftMarkerRef = useRef<maplibregl.Marker | null>(null);
     const { routeShape, addWaypoint, waypoints, moveWaypoint } = useTripContext();
 
-
+    // Register Layers
     useEffect(() => {
-        if (!mapContainer.current || mapFiles.length === 0) return;
+        if (!map || !isReady) return;
 
-        const map = new maplibregl.Map({
-            container: mapContainer.current,
-            style: { version: 8, sources: {}, layers: [{ id: 'bg', type: 'background', paint: { 'background-color': '#0A0A0A' } }] },
-            center: [-114.0, 44.0],
-            zoom: 6,
-            maxZoom: 18, // Limit zoom to prevent blank screens when overzooming offline tiles
-            attributionControl: false //KILL THE TEXT / INFO BUTTON
-        });
+        useMapLayers(
+            map,
+            mapFiles,
+            layerVisibility,
+            (poiProperties) => setClickedPoi(poiProperties)
+        );
 
-        mapRef.current = map;
+        map.triggerRepaint();
+    }, [map, mapFiles, layerVisibility, isReady]);
 
-        const resizeObserver = new ResizeObserver(() => {
-            if (mapRef.current) {
-                mapRef.current.resize();
-            }
-        });
-        resizeObserver.observe(mapContainer.current);
+    // Setup map event listeners
+    useEffect(() => {
+        if (!map) return;
 
-        map.on('load', () => {
-            useMapLayers(
-                map,
-                mapFiles,
-                layerVisibility,
-                (poiProperties) => setClickedPoi(poiProperties)
-            );
-        });
-
-        //When Click remove POI menu data and draft marker
-        map.on('click', (e) => {
+        const onClick = (e: any) => {
             if (e.defaultPrevented) return;
 
-            //Clear the Draft marker
+            // Clear the Draft marker
             if (draftMarkerRef.current) {
                 draftMarkerRef.current.remove();
                 draftMarkerRef.current = null;
             }
 
-            console.log('Empty Map Terrain clicked. Cleareing Telementry view State');
-            setClickedPoi(null)
-            setAddPoint(false) //Closes Add point 
-        })
+            console.log('Empty Map Terrain clicked. Clearing Telemetry view State');
+            setClickedPoi(null);
+            setAddPoint(false); // Closes Add point
+        };
 
-        //Create Waypoint markers
-        map.on('contextmenu', (e) => {
+        const onContextMenu = (e: any) => {
             e.preventDefault();
-            setClickedPoi(null)
-            const { lng, lat } = e.lngLat; //extract coordinates from the click event
+            setClickedPoi(null);
+            const { lng, lat } = e.lngLat;
 
-            //Clear ofl draft marker
+            // Clear old draft marker
             if (draftMarkerRef.current) {
                 draftMarkerRef.current.remove();
             }
@@ -82,23 +67,24 @@ function TacticalMap() {
                 color: '#D32F2F',
                 draggable: true
             })
-                .setLngLat([e.lngLat.lng, e.lngLat.lat])
+                .setLngLat([lng, lat])
                 .addTo(map);
             setAddPoint(true); // Sets Point Marker on the stage
 
             console.log(`Waypoint placed at: ${lat}, ${lng}`);
-        })
+        };
+
+        map.on('click', onClick);
+        map.on('contextmenu', onContextMenu);
 
         return () => {
-            resizeObserver.disconnect();
-            map.remove();
-            mapRef.current = null;
+            map.off('click', onClick);
+            map.off('contextmenu', onContextMenu);
         };
-    }, [mapFiles]);
+    }, [map]);
 
     // Dynamically update layer visibilities when layerVisibility state changes
     useEffect(() => {
-        const map = mapRef.current;
         if (!map || !map.loaded()) return;
 
         mapFiles.forEach(file => {
@@ -111,12 +97,11 @@ function TacticalMap() {
                 }
             });
         });
-    }, [layerVisibility, mapFiles]);
+    }, [map, layerVisibility, mapFiles]);
 
-    //Add Polyline between points
+    // Add Polyline between points
     useEffect(() => {
-        const map = mapRef.current;
-        if (!map || !map.isStyleLoaded()) return;
+        if (!map) return;
 
         const SOURCE_ID = 'route-source';
         const LAYER_ID = 'route-line';
@@ -143,7 +128,7 @@ function TacticalMap() {
         } else {
             (map.getSource(SOURCE_ID) as maplibregl.GeoJSONSource).setData(geojsonData);
         }
-    }, [routeShape]);
+    }, [map, routeShape]);
 
     return (
         <div className="relative w-full h-full bg-gray-900">
@@ -183,7 +168,7 @@ function TacticalMap() {
                 }}
             />
             <WaypointLayer
-                map={mapRef.current!}
+                map={map!}
                 waypoints={waypoints}
                 onWaypointMove={moveWaypoint}
             />
@@ -198,3 +183,4 @@ function TacticalMap() {
 export default TacticalMap;
 
 //TODO: Add uSer Layers in Setting 
+//TODO: Add a center too search

@@ -4,8 +4,6 @@
  */
 
 import { useState, useEffect } from "react";
-import { invoke } from "@tauri-apps/api/core";
-import { decodePolyline6 } from "../../utils/polyline";
 import { RoutingService } from "../../services/routing";
 
 export function useTrip() {

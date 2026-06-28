@@ -3,7 +3,7 @@ import { LAYER_REGISTRY, ICON_REGISTRY } from '../LayerRegistry';
 
 //Loads the Icons
 const loadIcons = async (map: maplibregl.Map) => {
-    for (const [key, config] of Object.entries(ICON_REGISTRY)) {
+    for (const config of Object.values(ICON_REGISTRY)) {
         if (!map.hasImage(config.id)) {
             const image = await map.loadImage(config.path);
             map.addImage(config.id, image.data);
@@ -17,14 +17,17 @@ export const useMapLayers = (
         layerVisibility:Record<string,boolean>,
         onPoiClick?:(properties:any)=>void
     ) => {
-    if (!map.loaded()) return;
+    console.log("[useMapLayers] Execution started. Bypassing isStyleLoaded() check.");
+    console.log("[useMapLayers] Loading icons...");
     loadIcons(map);
    
     mapFiles.forEach(file => {
         const sourceId = file.replace('.mbtiles', '');
+        console.log(`[useMapLayers] Processing mapFile: ${file} (sourceId: ${sourceId})`);
 
         // Add Source
         if (!map.getSource(sourceId)) {
+            console.log(`[useMapLayers] Adding Source: ${sourceId}`);
             map.addSource(sourceId, {
                 type: 'vector',
                 tiles: [`http://localhost:8080/tiles/${sourceId}/{z}/{x}/{y}`],
@@ -41,10 +44,12 @@ export const useMapLayers = (
             const layerId = `${sourceId}-${layer.id}-layer`;
 
             if (map.getLayer(layerId)) {
+                console.log(`[useMapLayers] Layer already exists. Updating visibility for: ${layerId} to ${visibilityValue}`);
                 map.setLayoutProperty(layerId, 'visibility', visibilityValue);
                 return; 
             }
 
+            console.log(`[useMapLayers] Adding new layer: ${layerId} (visibility: ${visibilityValue})`);
             const sourceLayerName = layer.sourceLayer || layer.id.split('-').pop(); // .pop() takes the last part, usually more reliable
             //console.log(`[MAP DEBUG] Layer: ${layer.id} | Searching Source-Layer: ${sourceLayerName} | Layer ID: ${layerId}`);
             //console.log(`Debug Layer: ${layerId} | SourceLayer: ${sourceLayerName}`);
@@ -153,6 +158,8 @@ export const useMapLayers = (
 
                 //Click Menu on POI
                 map.on('click',layerId, (e)=>{
+                    e.preventDefault(); // Stop the global map click event from clearing the POI!
+
                     if(e.features && e.features.length > 0){
                         const properties = e.features[0];
                         const feature = e.features[0];
