@@ -18,8 +18,6 @@ pub fn run() {
             maptile::check_region_bundle,
             maptile::download_region_bundle,
             routing::calculate_route,
-            maptile::download_region_bundle,
-            maptile::check_region_bundle,
             maptile::delete_region_bundle,
             maptile::delete_old_region_bundle,
         ])
