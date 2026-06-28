@@ -1,6 +1,12 @@
+/**
+ * useTrips.ts
+ * @file This file contains the useTrip hook, which is used to manage the trip state.
+ */
+
 import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { decodePolyline6 } from "../../utils/polyline";
+import { RoutingService } from "../../services/routing";
 
 export function useTrip() {
     const [waypoints, setWaypoints] = useState<any[]>([]);
@@ -15,12 +21,9 @@ export function useTrip() {
                 return;
             }
             try {
-                const locations = waypoints.map(wp => ({ lat: wp.coord.lat, lng: wp.coord.lng }));
-                const response: any = await invoke('calculate_route', { locations });
-                let combined: any[] = [];
-                response.trip.legs.forEach((leg: any) => combined.push(...decodePolyline6(leg.shape)));
-                setRouteShape(combined);
-                setStats({ distance: response.trip.summary.length, duration: response.trip.summary.time });
+                const result = await RoutingService.calculateRoute(waypoints);
+                setRouteShape(result.routeShape);
+                setStats(result.stats);
             } catch (e) { console.error(e); }
         };
         calculateTrip();

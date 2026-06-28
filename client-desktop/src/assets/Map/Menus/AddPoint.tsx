@@ -1,3 +1,9 @@
+/**
+ * AddPoint.tsx
+ * @file This is the modalwhich pops up when the user right clicks on the map.
+ * @description This modal is used to add a new waypoint to the trip.
+ */
+
 import { useTripContext } from "../../../hooks/trip/TripContext";
 
 interface AddPointProps {
