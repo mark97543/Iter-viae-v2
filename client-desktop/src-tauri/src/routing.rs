@@ -48,7 +48,7 @@ pub async fn calculate_route(app_handle: AppHandle, locations: Vec<Waypoint>) ->
                 "lat": loc.lat, 
                 "lon": loc.lng, 
                 "type": "break", 
-                "search_filter": {"radius": 500},
+                "search_filter": {"radius": 50},
             })
         }).collect::<Vec<_>>(),
         "costing": "motorcycle",

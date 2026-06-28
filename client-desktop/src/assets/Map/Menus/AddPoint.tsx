@@ -1,9 +1,15 @@
+import { useTripContext } from "../../../hooks/trip/TripContext";
+
 interface AddPointProps {
     isOpen: boolean;
     onConfirm: () => void;
 }
 
 function AddPoint({ isOpen, onConfirm }: AddPointProps) {
+    const { addWaypoint } = useTripContext();
+
+    if (!isOpen) return null;
+
     return (
         <div className={`
             absolute bottom-0 left-1/2 -translate-x-1/2 z-40
@@ -15,11 +21,11 @@ function AddPoint({ isOpen, onConfirm }: AddPointProps) {
             onClick={(e) => e.stopPropagation()}
         >
             <button className="w-full bg-tactical-red hover:bg-tactical-hover text-white font-bold uppercase tracking-wider text-xs py-2.5 px-4 rounded-lg transition-all duration-200 cursor-pointer shadow-[0_0_10px_rgba(220,38,38,0.2)] hover:shadow-[0_0_12px_rgba(220,38,38,0.3)]"
-                onClick={(e)=>{
+                onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
                     onConfirm();
-                }}  
+                }}
             >
                 [ Add Waypoint ]
             </button>

@@ -1,34 +1,36 @@
-import {listen} from '@tauri-apps/api/event';
-import {useEffect, useState} from 'react';
+import { listen } from '@tauri-apps/api/event';
+import { useEffect, useState } from 'react';
 import LoadMapModal from './assets/LoadMapModal.tsx';
 import TacticalMap from './assets/Map/TacticalMap.tsx'
-
+import { TripProvider } from './hooks/trip/TripContext.tsx';
 
 
 function App() {
-  
+
   const [loadMapModalOpen, setLoadMapModalOpen] = useState(false);
 
-  const closeMapModal =()=>{
+  const closeMapModal = () => {
     setLoadMapModalOpen(false);
   }
 
-  useEffect(()=>{
-    const unlistenMapLoad = listen('open-load-map-modal',() =>{
+  useEffect(() => {
+    const unlistenMapLoad = listen('open-load-map-modal', () => {
       setLoadMapModalOpen(true);
     });
 
     return () => {
-      unlistenMapLoad.then((f)=>f());
+      unlistenMapLoad.then((f) => f());
     }
-  },[]);
+  }, []);
 
   return (
     <div className="bg-canvas-panel text-ui-text h-screen w-screen overflow-hidden">
-      <TacticalMap/>
-      {loadMapModalOpen && <LoadMapModal onClose={closeMapModal}/>}
+      <TripProvider>
+        <TacticalMap />
+        {loadMapModalOpen && <LoadMapModal onClose={closeMapModal} />}
+      </TripProvider>
     </div>
-    
+
   );
 }
 

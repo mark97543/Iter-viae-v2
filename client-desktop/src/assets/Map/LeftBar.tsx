@@ -2,16 +2,13 @@ import { useState } from "react";
 import { DndContext, closestCenter } from "@dnd-kit/core";
 import { arrayMove, SortableContext, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { useTripContext } from "../../hooks/trip/TripContext";
 import { Waypoint } from "../../Navigation/navigation.types";
 
-interface LeftBarProps {
-    waypoints: Waypoint[];
-    setWaypoints: React.Dispatch<React.SetStateAction<Waypoint[]>>;
-}
-
-function LeftBar({ waypoints, setWaypoints }: LeftBarProps) {
+function LeftBar() {
     const [expandBar, setExpandBar] = useState(true);
     const [editId, setEditId] = useState<string | null>(null);
+    const { waypoints, setWaypoints } = useTripContext();
 
 
     const BarSelect = () => {
@@ -20,19 +17,17 @@ function LeftBar({ waypoints, setWaypoints }: LeftBarProps) {
 
     const handleDragEnd = (event: any) => {
         const { active, over } = event;
-        if (!over) return;
+        if (!over || active.id === over.id) return;
 
-        if (active.id !== over.id) {
-            const oldIndex = waypoints.findIndex((w: any) => w.id === active.id);
-            const newIndex = waypoints.findIndex((w: any) => w.id === over.id);
+        const oldIndex = waypoints.findIndex((w: any) => w.id === active.id);
+        const newIndex = waypoints.findIndex((w: any) => w.id === over.id);
 
-            const newOrder = arrayMove(waypoints, oldIndex, newIndex);
-            setWaypoints(newOrder);
-        }
+        // Update the order in the global state
+        setWaypoints(arrayMove(waypoints, oldIndex, newIndex));
     };
 
-    console.log('Waypoints: ', waypoints);
-
+    //console.log('Waypoints: ', waypoints);
+    console.log("LeftBar rendering. Waypoint count:", waypoints.length);
     return (
         <div className={`
             absolute 
@@ -70,7 +65,13 @@ function LeftBar({ waypoints, setWaypoints }: LeftBarProps) {
                                 <SortableContext items={waypoints ? waypoints.map((w: any) => w.id) : []} strategy={verticalListSortingStrategy}>
                                     {/* Map Through the Waypoints and display them */}
                                     {waypoints && waypoints.map((point: any, index: any) => (
-                                        <SortableWaypoint key={point.id} point={point} index={index} setWaypoints={setWaypoints} editingId={editId} setEditingId={setEditId} />
+                                        <SortableWaypoint
+                                            key={point.id}
+                                            point={point}
+                                            index={index}
+                                            editingId={editId}
+                                            setEditingId={setEditId}
+                                        />
                                     ))}
                                 </SortableContext>
                             </div>
@@ -91,7 +92,7 @@ function LeftBar({ waypoints, setWaypoints }: LeftBarProps) {
     )
 }
 
-function SortableWaypoint({ point, index, setWaypoints, editingId, setEditingId }: { point: any; index: number; setWaypoints: any; editingId: string | null; setEditingId: (id: string | null) => void; }) {
+function SortableWaypoint({ point, index, editingId, setEditingId }: { point: any; index: number; editingId: string | null; setEditingId: (id: string | null) => void; }) {
     const { attributes, listeners, setNodeRef, transform, transition, } = useSortable({ id: point.id });
     const style = {
         transform: CSS.Translate.toString(transform),
@@ -100,18 +101,20 @@ function SortableWaypoint({ point, index, setWaypoints, editingId, setEditingId 
     };
     const [name, setName] = useState('');
     const [copied, setCopied] = useState(false);
+    const { deleteWaypoint, setWaypoints, waypoints } = useTripContext();
 
     //determine if this point is in editing mode
     const isEditing = editingId === point.id;
 
     const deleteItem = (id: string) => {
-        setWaypoints((prev: Waypoint[]) => prev.filter(wp => wp.id !== id))
+        deleteWaypoint(id);
     }
 
     const saveItem = (id: string) => {
         const trimmedName = name.trim();
         setWaypoints((prev: Waypoint[]) =>
-            prev.map(wp => (wp.id === id ? { ...wp, name: trimmedName || wp.name } : wp))
+            // Explicitly type the waypoint (wp) here
+            prev.map((wp: Waypoint) => (wp.id === id ? { ...wp, name: trimmedName || wp.name } : wp))
         );
         setEditingId(null);
     }
