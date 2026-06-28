@@ -1,8 +1,8 @@
 import { listen } from '@tauri-apps/api/event';
 import { useEffect, useState } from 'react';
-import LoadMapModal from './assets/LoadMapModal.tsx';
-import TacticalMap from './assets/Map/TacticalMap.tsx'
-import { TripProvider } from './hooks/trip/TripContext.tsx';
+import LoadMapModal from './components/modals/LoadMapModal';
+import TacticalMap from './components/map/TacticalMap';
+import { TripProvider } from './context/TripContext';
 
 
 function App() {

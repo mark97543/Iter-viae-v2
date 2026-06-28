@@ -15,7 +15,7 @@ export function useMapController() {
     useEffect(() => {
         if (!mapContainer.current) return;
 
-        console.log("[useMapController] Initializing MapLibre instance...");
+        //console.log("[useMapController] Initializing MapLibre instance...");
         const mapInstance = new maplibregl.Map({
             container: mapContainer.current,
             style: { version: 8, sources: {}, layers: [{ id: 'bg', type: 'background', paint: { 'background-color': '#0A0A0A' } }] },
@@ -26,13 +26,13 @@ export function useMapController() {
         });
 
         mapInstance.once('styledata', () => {
-            console.log("[useMapController] MapLibre fired 'styledata'. Map is ready.");
+            //console.log("[useMapController] MapLibre fired 'styledata'. Map is ready.");
             setMap(mapInstance);
             setIsReady(true);
         });
-        
+
         mapInstance.once('load', () => {
-            console.log("[useMapController] MapLibre fired 'load'.");
+            //console.log("[useMapController] MapLibre fired 'load'.");
         });
         mapRef.current = mapInstance;
 

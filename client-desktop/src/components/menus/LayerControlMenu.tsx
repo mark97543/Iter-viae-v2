@@ -1,3 +1,5 @@
+import pinIcon from '../../assets/icons/pin.png';
+import gasIcon from '../../assets/icons/gas.png';
 import {useState} from 'react'
 
 interface LayerControlProps {
@@ -26,7 +28,7 @@ function LayerControlMenu({layerVisibility, toggleLayer}:LayerControlProps){
                         ${button1 ? 'bg-neutral-800' : ' bg-tactical-red '}`}
                     onClick={()=>setButton1(!button1)}               
                 >
-                    <img src="/pin.png" className='h-5 w-5' alt="Pin" />
+                    <img src={pinIcon} className='h-5 w-5' alt="Pin" />
                 </button>
 
                 {/* Divider Line */}
@@ -98,7 +100,7 @@ function Button1Window( {visible, layerVisibility, toggleLayer }: Button1WindowP
                     onClick={()=>toggleLayer('poi-fuel')}
                 >
                     <img 
-                        src='./gas.png' 
+                        src={gasIcon} 
                         className='h-4 w-4 object-contain opacity-70 group-hover:opacity-100 transition-opacity' 
                         alt="Fuel POI" 
                     />

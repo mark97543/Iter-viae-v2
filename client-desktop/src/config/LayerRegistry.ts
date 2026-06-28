@@ -1,4 +1,6 @@
-// src/assets/Map/LayerRegistry.ts
+// src/config/LayerRegistry.ts
+import fuelIcon from '../assets/icons/fuel.png';
+
 export interface MapLayerConfig {
     id: string;
     type: 'fill' | 'line' | 'symbol';
@@ -19,7 +21,7 @@ export interface MapLayerConfig {
 export const ICON_REGISTRY ={
     fuel: { 
         id: 'fuel-icon', 
-        path: 'fuel.png', 
+        path: fuelIcon, 
         icon_size: 0.25,
     },
 }

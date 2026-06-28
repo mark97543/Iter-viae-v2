@@ -1,15 +1,15 @@
 import { useRef, useEffect, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { useLocalMaps } from './Hooks/useLoaclMaps';
-import { useMapLayers } from './Hooks/useMapLayers';
-import { useLayerToggles } from './Hooks/useLayerToggles';
-import LayerControlMenu from './Menus/LayerControlMenu';
-import MenuCard from './Menus/MenuCard';
+import { useLocalMaps } from '../../hooks/map/useLocalMaps';
+import { useMapLayers } from '../../hooks/map/useMapLayers';
+import { useLayerToggles } from '../../hooks/map/useLayerToggles';
+import LayerControlMenu from '../menus/LayerControlMenu';
+import MenuCard from '../menus/MenuCard';
 import LeftBar from './LeftBar';
-import AddPoint from './Menus/AddPoint';
-import { WaypointLayer } from '../../Navigation/WaypointLayer';
-import { useTripContext } from '../../hooks/trip/TripContext';
+import AddPoint from '../menus/AddPoint';
+import { WaypointLayer } from './WaypointLayer';
+import { useTripContext } from '../../context/TripContext';
 import { useMapController } from '../../hooks/map/useMapController';
 
 function TacticalMap() {
@@ -173,9 +173,6 @@ function TacticalMap() {
                 onWaypointMove={moveWaypoint}
             />
 
-            <div className="absolute top-2 right-2 z-50 bg-black/80 text-white p-2 rounded text-xs">
-                Debug: Route Points: {routeShape?.length || 0} | Waypoints: {waypoints?.length || 0}
-            </div>
         </div>
     );
 }

@@ -4,7 +4,7 @@
  * @description This modal is used to add a new waypoint to the trip.
  */
 
-import { useTripContext } from "../../../hooks/trip/TripContext";
+import { useTripContext } from "../../context/TripContext";
 
 interface AddPointProps {
     isOpen: boolean;

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { decodePolyline6 } from '../utils/polyline';
-import { Waypoint } from './navigation.types'; // Your frontend type
+import { decodePolyline6 } from '../../utils/polyline';
+import { Waypoint } from '../../types/navigation.types'; // Your frontend type
 
 // 1. Define exactly what Rust wants so TypeScript stops complaining
 interface RustLocation {

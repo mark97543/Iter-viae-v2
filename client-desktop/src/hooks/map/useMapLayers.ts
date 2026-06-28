@@ -1,5 +1,5 @@
 import maplibregl from 'maplibre-gl';
-import { LAYER_REGISTRY, ICON_REGISTRY } from '../LayerRegistry';
+import { LAYER_REGISTRY, ICON_REGISTRY } from '../../config/LayerRegistry';
 
 //Loads the Icons
 const loadIcons = async (map: maplibregl.Map) => {
@@ -12,22 +12,22 @@ const loadIcons = async (map: maplibregl.Map) => {
 };
 
 export const useMapLayers = (
-        map: maplibregl.Map, 
-        mapFiles: string[], 
-        layerVisibility:Record<string,boolean>,
-        onPoiClick?:(properties:any)=>void
-    ) => {
-    console.log("[useMapLayers] Execution started. Bypassing isStyleLoaded() check.");
-    console.log("[useMapLayers] Loading icons...");
+    map: maplibregl.Map,
+    mapFiles: string[],
+    layerVisibility: Record<string, boolean>,
+    onPoiClick?: (properties: any) => void
+) => {
+    //console.log("[useMapLayers] Execution started. Bypassing isStyleLoaded() check.");
+    //console.log("[useMapLayers] Loading icons...");
     loadIcons(map);
-   
+
     mapFiles.forEach(file => {
         const sourceId = file.replace('.mbtiles', '');
-        console.log(`[useMapLayers] Processing mapFile: ${file} (sourceId: ${sourceId})`);
+        //console.log(`[useMapLayers] Processing mapFile: ${file} (sourceId: ${sourceId})`);
 
         // Add Source
         if (!map.getSource(sourceId)) {
-            console.log(`[useMapLayers] Adding Source: ${sourceId}`);
+            //console.log(`[useMapLayers] Adding Source: ${sourceId}`);
             map.addSource(sourceId, {
                 type: 'vector',
                 tiles: [`http://localhost:8080/tiles/${sourceId}/{z}/{x}/{y}`],
@@ -44,49 +44,49 @@ export const useMapLayers = (
             const layerId = `${sourceId}-${layer.id}-layer`;
 
             if (map.getLayer(layerId)) {
-                console.log(`[useMapLayers] Layer already exists. Updating visibility for: ${layerId} to ${visibilityValue}`);
+                //console.log(`[useMapLayers] Layer already exists. Updating visibility for: ${layerId} to ${visibilityValue}`);
                 map.setLayoutProperty(layerId, 'visibility', visibilityValue);
-                return; 
+                return;
             }
 
-            console.log(`[useMapLayers] Adding new layer: ${layerId} (visibility: ${visibilityValue})`);
+            //console.log(`[useMapLayers] Adding new layer: ${layerId} (visibility: ${visibilityValue})`);
             const sourceLayerName = layer.sourceLayer || layer.id.split('-').pop(); // .pop() takes the last part, usually more reliable
             //console.log(`[MAP DEBUG] Layer: ${layer.id} | Searching Source-Layer: ${sourceLayerName} | Layer ID: ${layerId}`);
             //console.log(`Debug Layer: ${layerId} | SourceLayer: ${sourceLayerName}`);
-            const base: any = { 
-                id: layerId, 
-                source: sourceId, 
-                'source-layer': sourceLayerName, 
-                minzoom: layer.minzoom, 
-                maxzoom: layer.maxzoom 
+            const base: any = {
+                id: layerId,
+                source: sourceId,
+                'source-layer': sourceLayerName,
+                minzoom: layer.minzoom,
+                maxzoom: layer.maxzoom
             };
 
             if (layer.type === 'fill') {
                 const isBuilding = layer.id === 'fill-building';
-                map.addLayer({ 
-                    ...base, 
+                map.addLayer({
+                    ...base,
                     // 1. Correct the type here
-                    type: isBuilding ? 'fill-extrusion' : 'fill', 
+                    type: isBuilding ? 'fill-extrusion' : 'fill',
                     paint: isBuilding ? {
                         // 2. Extrusion properties are valid ONLY for type 'fill-extrusion'
                         'fill-extrusion-color': layer.color,
                         'fill-extrusion-height': ['get', 'render_height'],
                         'fill-extrusion-base': ['get', 'render_min_height'],
                         'fill-extrusion-opacity': 0.9
-                    } : { 
+                    } : {
                         // 3. Standard fill properties for non-building polygons
-                        'fill-color': layer.color, 
-                        'fill-opacity': 0.9 
+                        'fill-color': layer.color,
+                        'fill-opacity': 0.9
                     },
                     layout: {
                         'visibility': visibilityValue
                     }
                 });
             } else if (layer.type === 'line') {
-                const layerConfig: any = { 
-                    ...base, 
-                    type: 'line', 
-                    paint: { 
+                const layerConfig: any = {
+                    ...base,
+                    type: 'line',
+                    paint: {
                         'line-color': layer.color,
                         // 1. Line Width: If a static width is defined, use it. Otherwise, use your road logic.
                         'line-width': layer.width || [
@@ -98,18 +98,18 @@ export const useMapLayers = (
                         ],
                         'line-dasharray': layer.dasharray || [1, 0]
                     },
-                    layout: { 
-                        'line-join': 'round', 
+                    layout: {
+                        'line-join': 'round',
                         'line-cap': 'round',
                         'visibility': visibilityValue
                     }
                 };
                 if (layer.filter) layerConfig.filter = layer.filter;
                 map.addLayer(layerConfig);
-            }else if (layer.type === 'symbol') {
-                const symbolConfig: any = { 
-                    ...base, 
-                    type: 'symbol', 
+            } else if (layer.type === 'symbol') {
+                const symbolConfig: any = {
+                    ...base,
+                    type: 'symbol',
                     layout: {
                         'visibility': visibilityValue
                     },
@@ -148,31 +148,32 @@ export const useMapLayers = (
                 map.addLayer(symbolConfig);
 
                 //Cursor for POI
-                map.on('mouseenter',layerId, ()=>{
+                map.on('mouseenter', layerId, () => {
                     map.getCanvas().style.cursor = 'pointer'
                 });
 
-                map.on('mouseleave', layerId, () =>{
-                    map.getCanvas().style.cursor ='';
+                map.on('mouseleave', layerId, () => {
+                    map.getCanvas().style.cursor = '';
                 });
 
                 //Click Menu on POI
-                map.on('click',layerId, (e)=>{
+                map.on('click', layerId, (e) => {
                     e.preventDefault(); // Stop the global map click event from clearing the POI!
 
-                    if(e.features && e.features.length > 0){
+                    if (e.features && e.features.length > 0) {
                         const properties = e.features[0];
                         const feature = e.features[0];
 
-                        const poiCoords = feature.geometry.type === 'Point' 
-                            ? (feature.geometry as any).coordinates 
+                        const poiCoords = feature.geometry.type === 'Point'
+                            ? (feature.geometry as any).coordinates
                             : [e.lngLat.lng, e.lngLat.lat]; // Fallback to click if not a point
 
                         //console.log("COORD IN: ", feature.geometry)
-                        const dataPackage = {prop:properties,coord:{ lng: poiCoords[0], lat: poiCoords[1] }}
+                        const dataPackage = { prop: properties, coord: { lng: poiCoords[0], lat: poiCoords[1] } }
                         //send the clicked poi data back to the react component
                         onPoiClick?.(dataPackage);
-                    }}
+                    }
+                }
                 )
             }
         });

@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, ReactNode } from 'react';
-import { useTrip } from './useTrip';
+import { useTrip } from '../hooks/trip/useTrip';
 
 const TripContext = createContext<any>(null);
 

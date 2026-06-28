@@ -1,9 +1,14 @@
+import xCloseIcon from '../../assets/icons/x-close.png';
+import hamButIcon from '../../assets/icons/HamBut.png';
+import saveIcon from '../../assets/icons/save.png';
+import trashIcon from '../../assets/icons/trash.png';
+import pencilIcon from '../../assets/icons/pencil.png';
 import { useState } from "react";
 import { DndContext, closestCenter } from "@dnd-kit/core";
 import { arrayMove, SortableContext, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { useTripContext } from "../../hooks/trip/TripContext";
-import { Waypoint } from "../../Navigation/navigation.types";
+import { useTripContext } from "../../context/TripContext";
+import { Waypoint } from "../../types/navigation.types";
 
 function LeftBar() {
     const [expandBar, setExpandBar] = useState(true);
@@ -27,7 +32,7 @@ function LeftBar() {
     };
 
     //console.log('Waypoints: ', waypoints);
-    console.log("LeftBar rendering. Waypoint count:", waypoints.length);
+    //console.log("LeftBar rendering. Waypoint count:", waypoints.length);
     return (
         <div className={`
             absolute 
@@ -53,7 +58,7 @@ function LeftBar() {
                             onClick={BarSelect}
                             title="Hide Sidebar"
                         >
-                            <img src="./x-close.png" className="w-4 h-4 opacity-70 hover:opacity-100 transition-opacity" alt="Close" />
+                            <img src={xCloseIcon} className="w-4 h-4 opacity-70 hover:opacity-100 transition-opacity" alt="Close" />
                         </button>
                     </div>
 
@@ -84,7 +89,7 @@ function LeftBar() {
                     onClick={BarSelect}
                     title="Show Sidebar"
                 >
-                    <img src="./HamBut.png" className="w-5 h-5 opacity-80 hover:opacity-100 transition-opacity" alt="Menu" />
+                    <img src={hamButIcon} className="w-5 h-5 opacity-80 hover:opacity-100 transition-opacity" alt="Menu" />
                 </button>
             )}
 
@@ -162,7 +167,7 @@ function SortableWaypoint({ point, index, editingId, setEditingId }: { point: an
                             className="p-1 rounded hover:bg-canvas-border/80 border border-transparent hover:border-canvas-border transition-colors cursor-pointer"
                             title="Save"
                         >
-                            <img className="h-4 w-4 opacity-80 hover:opacity-100 transition-opacity" src="./save.png" alt="Save" />
+                            <img className="h-4 w-4 opacity-80 hover:opacity-100 transition-opacity" src={saveIcon} alt="Save" />
                         </button>
                         <button
                             onClick={() => {
@@ -172,7 +177,7 @@ function SortableWaypoint({ point, index, editingId, setEditingId }: { point: an
                             className="p-1 rounded hover:bg-red-500/20 border border-transparent hover:border-canvas-border transition-colors cursor-pointer"
                             title="Delete"
                         >
-                            <img className="h-4 w-4 opacity-80 hover:opacity-100 transition-opacity" src="./trash.png" alt="Delete" />
+                            <img className="h-4 w-4 opacity-80 hover:opacity-100 transition-opacity" src={trashIcon} alt="Delete" />
                         </button>
                     </>
                 ) : (
@@ -185,7 +190,7 @@ function SortableWaypoint({ point, index, editingId, setEditingId }: { point: an
                         className="p-1 rounded hover:bg-canvas-border/80 border border-transparent hover:border-canvas-border transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                         title="Edit"
                     >
-                        <img className="h-4 w-4 opacity-80 hover:opacity-100 transition-opacity" src="./pencil.png" alt="Edit" />
+                        <img className="h-4 w-4 opacity-80 hover:opacity-100 transition-opacity" src={pencilIcon} alt="Edit" />
                     </button>
                 )}
             </div>

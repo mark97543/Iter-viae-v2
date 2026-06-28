@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { LAYER_REGISTRY } from '../LayerRegistry';
+import { LAYER_REGISTRY } from '../../config/LayerRegistry';
 
 export const useLayerToggles = () =>{
     const initialState = LAYER_REGISTRY.reduce((acc, layer)=>{
