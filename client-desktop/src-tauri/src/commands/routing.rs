@@ -62,10 +62,15 @@ pub async fn calculate_route(
             ..Default::default()
         };
 
-        let config = valhalla::ConfigBuilder {
+        let mut config_builder = valhalla::ConfigBuilder {
             mjolnir,
             ..Default::default()
-        }.build();
+        };
+        
+        config_builder.service_limits.auto.max_distance = 50000000.0;
+        config_builder.service_limits.motorcycle.max_distance = 50000000.0;
+
+        let config = config_builder.build();
 
         // Initialize the heavy actor once
         let actor = Actor::new(&config).map_err(|e| e.to_string())?;
