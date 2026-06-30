@@ -123,7 +123,7 @@ function TacticalMap() {
                 type: 'line',
                 source: SOURCE_ID,
                 layout: { 'line-join': 'round', 'line-cap': 'round' },
-                paint: { 'line-color': '#3b82f6', 'line-width': 4 }
+                paint: { 'line-color': '#ffffffff', 'line-width': 6 }
             });
         } else {
             (map.getSource(SOURCE_ID) as maplibregl.GeoJSONSource).setData(geojsonData);

@@ -1,3 +1,5 @@
+// src/hooks/trip/useWaypoints.ts
+
 import { useEffect, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { decodePolyline6 } from '../../utils/polyline';
@@ -12,6 +14,7 @@ interface RustLocation {
 export function useWaypoints() {
     const [waypoints, setWaypoints] = useState<Waypoint[]>([]);
     const [routeShape, setRouteShape] = useState<any[]>([]);
+    const [tripTitle, setTripTitle] = useState('');
 
     useEffect(() => {
         let ignore = false;
@@ -36,7 +39,7 @@ export function useWaypoints() {
 
                 if (response?.trip?.legs) {
                     let combinedCoordinates: any[] = [];
-                    
+
                     response.trip.legs.forEach((leg: any, i: number) => {
                         // Add the exact coordinate of the waypoint starting this leg
                         if (i < waypoints.length) {
@@ -45,8 +48,8 @@ export function useWaypoints() {
 
                         const decoded = decodePolyline6(leg.shape);
                         // Safely filter out any corrupted coordinates (NaN/null) that MapLibre would crash on
-                        const validPoints = decoded.filter((pt: any) => 
-                            Array.isArray(pt) && pt.length === 2 && 
+                        const validPoints = decoded.filter((pt: any) =>
+                            Array.isArray(pt) && pt.length === 2 &&
                             Number.isFinite(pt[0]) && Number.isFinite(pt[1])
                         );
                         combinedCoordinates.push(...validPoints);
@@ -65,7 +68,7 @@ export function useWaypoints() {
                         // Filter out points that are extremely close (float32 collisions)
                         return Math.abs(pt[0] - prev[0]) > 0.000001 || Math.abs(pt[1] - prev[1]) > 0.000001;
                     });
-                    
+
                     console.log("Setting new routeShape with length:", deduplicated.length);
                     setRouteShape(deduplicated);
                 } else {
@@ -100,5 +103,13 @@ export function useWaypoints() {
         setWaypoints(prev => prev.map(wp => wp.id === id ? { ...wp, coord: newLngLat } : wp));
     };
 
-    return { waypoints, addWaypoint, moveWaypoint, setWaypoints, routeShape };
+    return {
+        waypoints,
+        addWaypoint,
+        moveWaypoint,
+        setWaypoints,
+        routeShape,
+        tripTitle,
+        setTripTitle
+    };
 }

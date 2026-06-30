@@ -1,25 +1,36 @@
+//src/lib.rs
+
 use tauri::{Manager, Emitter}; 
 use crate::menu::create_menu; 
+use std::sync::Mutex;
+use valhalla::Actor;
 
 pub mod menu;
 pub mod modules;    // This holds your pure logic (maptile.rs, etc.)
 pub mod commands;   // This holds your API gateway (map.rs, etc.)
 
+pub struct ValhallaState(pub Mutex<Option<Actor>>);
+
+
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .manage(ValhallaState(Mutex::new(None)))
         .invoke_handler(tauri::generate_handler![
             commands::network::fetch_directus_data,
             commands::network::download_map,
             commands::map::list_maps,
             commands::map::get_local_maps,
             commands::map::get_local_routing_tiles,
-            commands::map::check_region_bundle,
-            commands::map::download_region_bundle,
+
+            commands::map::download_region_visuals,
+            commands::map::check_region_visuals,
+            commands::map::delete_region_visuals,
+            commands::map::delete_old_region_visuals,
+            commands::map::check_routing_graph,
+            commands::map::delete_routing_graph,
             commands::routing::calculate_route,
-            commands::map::delete_region_bundle,
-            commands::map::delete_old_region_bundle,
         ])
         .setup(|app| {
             let _ = app.set_menu(create_menu(app.handle()).unwrap());
