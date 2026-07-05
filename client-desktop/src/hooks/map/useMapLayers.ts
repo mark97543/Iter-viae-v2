@@ -49,6 +49,13 @@ export const useMapLayers = (
                 return;
             }
 
+            let beforeId: string | undefined = undefined;
+            if (map.getLayer('route-line')) {
+                beforeId = 'route-line';
+            } else if (map.getLayer('waypoint-circle-layer')) {
+                beforeId = 'waypoint-circle-layer';
+            }
+
             //console.log(`[useMapLayers] Adding new layer: ${layerId} (visibility: ${visibilityValue})`);
             const sourceLayerName = layer.sourceLayer || layer.id.split('-').pop(); // .pop() takes the last part, usually more reliable
             //console.log(`[MAP DEBUG] Layer: ${layer.id} | Searching Source-Layer: ${sourceLayerName} | Layer ID: ${layerId}`);
@@ -81,7 +88,7 @@ export const useMapLayers = (
                     layout: {
                         'visibility': visibilityValue
                     }
-                });
+                }, beforeId);
             } else if (layer.type === 'line') {
                 const layerConfig: any = {
                     ...base,
@@ -105,7 +112,7 @@ export const useMapLayers = (
                     }
                 };
                 if (layer.filter) layerConfig.filter = layer.filter;
-                map.addLayer(layerConfig);
+                map.addLayer(layerConfig, beforeId);
             } else if (layer.type === 'symbol') {
                 const symbolConfig: any = {
                     ...base,
@@ -145,7 +152,7 @@ export const useMapLayers = (
                 }
 
                 if (layer.filter) symbolConfig.filter = layer.filter;
-                map.addLayer(symbolConfig);
+                map.addLayer(symbolConfig, beforeId);
 
                 //Cursor for POI
                 map.on('mouseenter', layerId, () => {

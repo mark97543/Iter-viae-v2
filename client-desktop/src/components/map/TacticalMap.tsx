@@ -118,13 +118,19 @@ function TacticalMap() {
 
         if (!map.getSource(SOURCE_ID)) {
             map.addSource(SOURCE_ID, { type: 'geojson', data: geojsonData });
+            
+            let beforeId: string | undefined = undefined;
+            if (map.getLayer('waypoint-circle-layer')) {
+                beforeId = 'waypoint-circle-layer';
+            }
+
             map.addLayer({
                 id: LAYER_ID,
                 type: 'line',
                 source: SOURCE_ID,
                 layout: { 'line-join': 'round', 'line-cap': 'round' },
                 paint: { 'line-color': '#ffffff', 'line-width': 6 }
-            });
+            }, beforeId);
         } else {
             (map.getSource(SOURCE_ID) as maplibregl.GeoJSONSource).setData(geojsonData);
         }
