@@ -1,0 +1,54 @@
+// src/components/modals/GlobalModal.tsx
+import { useState } from 'react';
+
+interface GlobalModalProps {
+    title: string;
+    message: string;
+    type: 'alert' | 'prompt' | 'choice';
+    onConfirm: (value?: string) => void;
+    onCancel: () => void;
+}
+
+export function GlobalModal({ title, message, type, onConfirm, onCancel }: GlobalModalProps) {
+    const [inputValue, setInputValue] = useState("");
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+            <div className="w-96 bg-neutral-900 border border-neutral-700 p-6 shadow-2xl">
+                <h2 className="text-lg font-bold text-white mb-2">{title}</h2>
+                <p className="text-neutral-400 mb-6">{message}</p>
+
+                {type === 'prompt' && (
+                    <input
+                        autoFocus
+                        className="w-full bg-neutral-800 border border-neutral-600 text-white p-2 mb-6 rounded"
+                        value={inputValue}
+                        onChange={(e) => setInputValue(e.target.value)}
+                        placeholder="Enter trip title..."
+                    />
+                )}
+
+                <div className="flex justify-end gap-3">
+                    {type !== 'alert' && (
+                        <button
+                            onClick={() => type === 'choice' ? onConfirm('no') : onCancel()}
+                            className="px-4 py-2 text-neutral-400 hover:text-white"
+                        >
+                            {type === 'choice' ? 'No' : 'Cancel'}
+                        </button>
+                    )}
+                    <button
+                        onClick={() => {
+                            if (type === 'choice') return onConfirm('yes');
+                            if (type === 'prompt') return onConfirm(inputValue);
+                            onConfirm(undefined); // works for 'alert'
+                        }}
+                        className="bg-red-900 text-white px-4 py-2 rounded hover:bg-red-800"
+                    >
+                        {type === 'choice' ? 'Yes' : type === 'alert' ? 'OK' : 'Confirm'}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}

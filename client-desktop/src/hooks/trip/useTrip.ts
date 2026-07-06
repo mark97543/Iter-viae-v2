@@ -7,25 +7,48 @@ import { useState, useEffect } from "react";
 import { RoutingService } from "../../services/routing";
 import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
+import { useModal } from "../../context/ModalContext";
 
 export function useTrip() {
     const [waypoints, setWaypoints] = useState<any[]>([]);
     const [routeShape, setRouteShape] = useState<any[]>([]);
     const [stats, setStats] = useState({ distance: 0, duration: 0 });
     const [tripTitle, setTripTitle] = useState('');
+    const { openModal } = useModal();
 
     //Listener for the save trigger from the menu
     useEffect(() => {
         const unlisten = listen("trigger-save", async () => {
+            let currentTitle = tripTitle;
+
+            // Loop until we get a valid title or the user cancels
+            while (!currentTitle || currentTitle.trim() === "") {
+                const newTitle = await openModal("ERR_NO_TITLE");
+
+                // If user clicks Cancel, newTitle is null. Abort the save.
+                if (newTitle === null || newTitle === undefined) {
+                    return; 
+                }
+
+                // If the user typed a valid title (not just spaces)
+                if (typeof newTitle === "string" && newTitle.trim() !== "") {
+                    currentTitle = newTitle.trim();
+                    setTripTitle(currentTitle);
+                    break;
+                }
+                // Otherwise, the loop repeats and shows the modal again
+            }
+
+
             // This code runs when the user clicks "Save Route" in the menu
             const dataToSave = JSON.stringify({
-                title: tripTitle || "Untitled Trip",
+                title: currentTitle,
                 waypoints: waypoints
             });
 
             try {
                 await invoke("save_route", {
-                    routeName: tripTitle || "trip",
+                    routeName: currentTitle,
                     data: dataToSave
                 });
                 console.log("Trip saved successfully!");
@@ -38,7 +61,7 @@ export function useTrip() {
         return () => {
             unlisten.then(f => f());
         };
-    }, [waypoints, tripTitle]); // Re-run if these change
+    }, [waypoints, tripTitle, openModal]); // Re-run if these change
 
     useEffect(() => {
         const calculateTrip = async () => {

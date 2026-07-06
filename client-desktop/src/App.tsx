@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import LoadMapModal from './components/modals/LoadMapModal';
 import TacticalMap from './components/map/TacticalMap';
 import { TripProvider } from './context/TripContext';
+import { ModalProvider } from './context/ModalContext';
 
 
 function App() {
@@ -25,10 +26,12 @@ function App() {
 
   return (
     <div className="bg-canvas-panel text-ui-text h-screen w-screen overflow-hidden">
-      <TripProvider>
-        <TacticalMap />
-        {loadMapModalOpen && <LoadMapModal onClose={closeMapModal} />}
-      </TripProvider>
+      <ModalProvider>
+        <TripProvider>
+          <TacticalMap />
+          {loadMapModalOpen && <LoadMapModal onClose={closeMapModal} />}
+        </TripProvider>
+      </ModalProvider>
     </div>
 
   );
