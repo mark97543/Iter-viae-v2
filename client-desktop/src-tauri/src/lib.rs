@@ -44,8 +44,14 @@ pub fn run() {
                 "save_route" =>{
                     let _ = app_handle.emit("trigger-save", ());
                 }
+                "trigger_new_trip" => {
+                    let _ = app_handle.emit("trigger-new-trip", ());
+                }
                 "loadMap" => {
                     app_handle.emit("open-load-map-modal", ()).unwrap();
+                }
+                "show_shortcuts" => {
+                    let _ = app_handle.emit("open-shortcuts-modal", ());
                 }
                 _ => {}
             }

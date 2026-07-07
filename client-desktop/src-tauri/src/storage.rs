@@ -1,6 +1,6 @@
 // src/storage.rs
 
-use tauri::{AppHandle, Runtime, Manager};
+use tauri::{AppHandle, Runtime, Manager, Emitter};
 use std::process::Command;
 use std::io::Write;
 
@@ -42,5 +42,13 @@ pub fn save_route<R: Runtime>(app : AppHandle<R>, route_name:String, data:String
     //Write the json file
     let mut file = std::fs::File::create(path).map_err(|e| e.to_string())?;
     file.write_all(data.as_bytes()).map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+// New Trip Signal
+#[tauri::command]
+pub fn trigger_new_trip<R: Runtime>(app: AppHandle<R>)->Result<(), String>{
+    //emit signal to frontend
+    app.emit("trigger-new-trip", ()).map_err(|e| e.to_string())?;
     Ok(())
 }

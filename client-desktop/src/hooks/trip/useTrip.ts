@@ -27,7 +27,7 @@ export function useTrip() {
 
                 // If user clicks Cancel, newTitle is null. Abort the save.
                 if (newTitle === null || newTitle === undefined) {
-                    return; 
+                    return;
                 }
 
                 // If the user typed a valid title (not just spaces)
@@ -57,9 +57,14 @@ export function useTrip() {
             }
         });
 
+        const unlisten2 = listen("trigger-new-trip", async () => {
+            console.log("Trigger new Trip") //TODO: Need to build this functionality
+        })
+
         // Cleanup listener on unmount
         return () => {
             unlisten.then(f => f());
+            unlisten2.then(f => f());
         };
     }, [waypoints, tripTitle, openModal]); // Re-run if these change
 

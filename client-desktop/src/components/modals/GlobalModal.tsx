@@ -1,9 +1,9 @@
 // src/components/modals/GlobalModal.tsx
-import { useState } from 'react';
+import { useState, ReactNode } from 'react';
 
 interface GlobalModalProps {
     title: string;
-    message: string;
+    message: ReactNode;
     type: 'alert' | 'prompt' | 'choice';
     onConfirm: (value?: string) => void;
     onCancel: () => void;
@@ -16,7 +16,7 @@ export function GlobalModal({ title, message, type, onConfirm, onCancel }: Globa
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
             <div className="w-96 bg-neutral-900 border border-neutral-700 p-6 shadow-2xl">
                 <h2 className="text-lg font-bold text-white mb-2">{title}</h2>
-                <p className="text-neutral-400 mb-6">{message}</p>
+                <div className="text-neutral-400 mb-6">{message}</div>
 
                 {type === 'prompt' && (
                     <input

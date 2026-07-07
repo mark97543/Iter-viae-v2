@@ -1,16 +1,10 @@
 // src/context/ModalContext.tsx
 
 import { createContext, useContext, useState, ReactNode } from "react";
-import errorData from "../assets/Json/error.json";
+import { modalConfig, ModalConfigItem } from "../config/modalConfig";
 import { GlobalModal } from "../components/modals/GlobalModal";
 
-interface ModalConfig {
-    title: string;
-    message: string;
-    type: 'alert' | 'prompt';
-}
-
-interface ModalState extends ModalConfig {
+interface ModalState extends ModalConfigItem {
     isOpen: boolean;
     onConfirm: (value?: string) => void;
     onCancel: () => void;
@@ -23,7 +17,7 @@ export function ModalProvider({ children }: { children: ReactNode }) {
     const [modal, setModal] = useState<ModalState | null>(null);
 
     const openModal = (errorCode: string) => {
-        const config = (errorData as any)[errorCode];
+        const config = modalConfig[errorCode];
 
         return new Promise((resolve) => {
             setModal({

@@ -1,7 +1,0 @@
-{
-    "ERR_NO_TITLE": {
-        "title": "A trip title is required",
-        "message": "Please enter a title before saving",
-        "type": "prompt"
-    }
-}

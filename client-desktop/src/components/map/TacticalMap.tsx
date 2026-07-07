@@ -118,7 +118,7 @@ function TacticalMap() {
 
         if (!map.getSource(SOURCE_ID)) {
             map.addSource(SOURCE_ID, { type: 'geojson', data: geojsonData });
-            
+
             let beforeId: string | undefined = undefined;
             if (map.getLayer('waypoint-circle-layer')) {
                 beforeId = 'waypoint-circle-layer';
@@ -178,6 +178,7 @@ function TacticalMap() {
                 waypoints={waypoints}
                 onWaypointMove={moveWaypoint}
             />
+
 
         </div>
     );

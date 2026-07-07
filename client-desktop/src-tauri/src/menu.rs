@@ -8,10 +8,11 @@ use tauri::{
 pub fn create_menu<R: Runtime>(app: &tauri::AppHandle<R>) -> tauri::Result<Menu<R>> {
 
     //File Menu
-    let save_item = MenuItem::with_id(app, "save_route", "Save Route",true, None::<&str>)?;
-    let quit_item = MenuItem::with_id(app, "quit", "Exit", true, None::<&str>)?;
+    let new_trip = MenuItem::with_id(app, "trigger_new_trip", "New Trip", true, None::<&str>)?;
+    let save_item = MenuItem::with_id(app, "save_route", "Save Route",true, Some("Ctrl+S"))?;
+    let quit_item = MenuItem::with_id(app, "quit", "Exit", true, Some("CmdOrCtrl+Q"))?;
     let separator = PredefinedMenuItem::separator(app)?;
-    let file_menu = Submenu::with_items(app, "File", true, &[ &save_item,&separator ,&quit_item])?;
+    let file_menu = Submenu::with_items(app, "File", true, &[ &new_trip, &separator,&save_item,&separator ,&quit_item])?;
 
     //Maps Menu
     let loadmaps_item = MenuItem::with_id(app, "loadMap", "Load Map", true, None::<&str>)?;
@@ -22,6 +23,9 @@ pub fn create_menu<R: Runtime>(app: &tauri::AppHandle<R>) -> tauri::Result<Menu<
     let debug_open_data_file = MenuItem::with_id(app, "open_data", "Open Data Folder",true, None::<&str>)?;
     let debug_menu = Submenu::with_items(app, "Debug", true, &[&debug_item, &debug_open_data_file])?;
     
+    //Help Menu
+    let shortcut_item = MenuItem::with_id(app, "show_shortcuts", "Show Shortcuts", true, None::<&str>)?;
+    let help_menu = Submenu::with_items(app, "Help", true, &[&shortcut_item])?;
 
-    Menu::with_items(app, &[&file_menu, &map_menu, &debug_menu])
+    Menu::with_items(app, &[&file_menu, &map_menu, &debug_menu, &help_menu])
 }
