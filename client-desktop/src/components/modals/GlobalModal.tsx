@@ -4,7 +4,7 @@ import { useState, ReactNode } from 'react';
 interface GlobalModalProps {
     title: string;
     message: ReactNode;
-    type: 'alert' | 'prompt' | 'choice';
+    type: 'alert' | 'prompt' | 'choice' | 'choice3';
     onConfirm: (value?: string) => void;
     onCancel: () => void;
 }
@@ -29,23 +29,31 @@ export function GlobalModal({ title, message, type, onConfirm, onCancel }: Globa
                 )}
 
                 <div className="flex justify-end gap-3">
-                    {type !== 'alert' && (
+                    {type === 'choice3' && (
                         <button
-                            onClick={() => type === 'choice' ? onConfirm('no') : onCancel()}
+                            onClick={onCancel}
                             className="px-4 py-2 text-neutral-400 hover:text-white"
                         >
-                            {type === 'choice' ? 'No' : 'Cancel'}
+                            Cancel
+                        </button>
+                    )}
+                    {type !== 'alert' && (
+                        <button
+                            onClick={() => (type === 'choice' || type === 'choice3') ? onConfirm('no') : onCancel()}
+                            className="px-4 py-2 text-neutral-400 hover:text-white"
+                        >
+                            {(type === 'choice' || type === 'choice3') ? 'No' : 'Cancel'}
                         </button>
                     )}
                     <button
                         onClick={() => {
-                            if (type === 'choice') return onConfirm('yes');
+                            if (type === 'choice' || type === 'choice3') return onConfirm('yes');
                             if (type === 'prompt') return onConfirm(inputValue);
                             onConfirm(undefined); // works for 'alert'
                         }}
                         className="bg-red-900 text-white px-4 py-2 rounded hover:bg-red-800"
                     >
-                        {type === 'choice' ? 'Yes' : type === 'alert' ? 'OK' : 'Confirm'}
+                        {(type === 'choice' || type === 'choice3') ? 'Yes' : type === 'alert' ? 'OK' : 'Confirm'}
                     </button>
                 </div>
             </div>

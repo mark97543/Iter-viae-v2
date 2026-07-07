@@ -8,7 +8,7 @@ use tauri::{
 pub fn create_menu<R: Runtime>(app: &tauri::AppHandle<R>) -> tauri::Result<Menu<R>> {
 
     //File Menu
-    let new_trip = MenuItem::with_id(app, "trigger_new_trip", "New Trip", true, None::<&str>)?;
+    let new_trip = MenuItem::with_id(app, "trigger_new_trip", "New Trip", true, Some("Ctrl+N"))?;
     let save_item = MenuItem::with_id(app, "save_route", "Save Route",true, Some("Ctrl+S"))?;
     let quit_item = MenuItem::with_id(app, "quit", "Exit", true, Some("CmdOrCtrl+Q"))?;
     let separator = PredefinedMenuItem::separator(app)?;

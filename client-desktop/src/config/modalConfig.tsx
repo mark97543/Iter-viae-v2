@@ -4,7 +4,7 @@ import { ReactNode } from 'react';
 export interface ModalConfigItem {
     title: string;
     message: ReactNode;
-    type: 'alert' | 'prompt' | 'choice';
+    type: 'alert' | 'prompt' | 'choice' | 'choice3';
 }
 
 export const modalConfig: Record<string, ModalConfigItem> = {
@@ -30,8 +30,17 @@ export const modalConfig: Record<string, ModalConfigItem> = {
                     <span>Exit Application</span>
                     <kbd className="bg-neutral-800 border border-neutral-600 px-2 rounded text-neutral-300">Cmd/Ctrl + Q</kbd>
                 </div>
+                <div className="flex justify-between border-b border-neutral-700 pb-2">
+                    <span>New Trip</span>
+                    <kbd className="bg-neutral-800 border border-neutral-600 px-2 rounded text-neutral-300">Cmd/Ctrl + N</kbd>
+                </div>
             </div>
         ),
         type: "alert"
+    },
+    "SAVE_PROGRESS": {
+        title: "Save Progress",
+        message: "Would you like to save your current trip before creating a new one? Selecting no you will lose all unsaved data",
+        type: "choice3"
     }
 };

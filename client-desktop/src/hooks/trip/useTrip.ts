@@ -16,49 +16,70 @@ export function useTrip() {
     const [tripTitle, setTripTitle] = useState('');
     const { openModal } = useModal();
 
-    //Listener for the save trigger from the menu
+    //Save Trip Function
+    const save_trip = async () => {
+        let currentTitle = tripTitle;
+
+        // Loop until we get a valid title or the user cancels
+        while (!currentTitle || currentTitle.trim() === "") {
+            const newTitle = await openModal("ERR_NO_TITLE");
+
+            // If user clicks Cancel, newTitle is null. Abort the save.
+            if (newTitle === null || newTitle === undefined) {
+                return;
+            }
+
+            // If the user typed a valid title (not just spaces)
+            if (typeof newTitle === "string" && newTitle.trim() !== "") {
+                currentTitle = newTitle.trim();
+                setTripTitle(currentTitle);
+                break;
+            }
+            // Otherwise, the loop repeats and shows the modal again
+        }
+
+        // This code runs when the user clicks "Save Route" in the menu
+        const dataToSave = JSON.stringify({
+            title: currentTitle,
+            waypoints: waypoints
+        });
+
+        try {
+            await invoke("save_route", {
+                routeName: currentTitle,
+                data: dataToSave
+            });
+            console.log("Trip saved successfully!");
+        } catch (err) {
+            console.error("Failed to save trip:", err);
+        }
+
+    }
+
+    //Listener for menu options
     useEffect(() => {
         const unlisten = listen("trigger-save", async () => {
-            let currentTitle = tripTitle;
-
-            // Loop until we get a valid title or the user cancels
-            while (!currentTitle || currentTitle.trim() === "") {
-                const newTitle = await openModal("ERR_NO_TITLE");
-
-                // If user clicks Cancel, newTitle is null. Abort the save.
-                if (newTitle === null || newTitle === undefined) {
-                    return;
-                }
-
-                // If the user typed a valid title (not just spaces)
-                if (typeof newTitle === "string" && newTitle.trim() !== "") {
-                    currentTitle = newTitle.trim();
-                    setTripTitle(currentTitle);
-                    break;
-                }
-                // Otherwise, the loop repeats and shows the modal again
-            }
-
-
-            // This code runs when the user clicks "Save Route" in the menu
-            const dataToSave = JSON.stringify({
-                title: currentTitle,
-                waypoints: waypoints
-            });
-
-            try {
-                await invoke("save_route", {
-                    routeName: currentTitle,
-                    data: dataToSave
-                });
-                console.log("Trip saved successfully!");
-            } catch (err) {
-                console.error("Failed to save trip:", err);
-            }
+            save_trip();
         });
 
         const unlisten2 = listen("trigger-new-trip", async () => {
-            console.log("Trigger new Trip") //TODO: Need to build this functionality
+            console.log("Trigger new Trip")
+
+            if (waypoints.length > 0 || tripTitle.trim() !== "") {
+                const userResponse = await openModal("SAVE_PROGRESS");
+
+                if (userResponse === "no") {
+                    setWaypoints([]);
+                    setTripTitle("");
+                }
+
+                if (userResponse === "yes") {
+                    save_trip();
+                    setWaypoints([]);
+                    setTripTitle("");
+                }
+
+            }
         })
 
         // Cleanup listener on unmount
