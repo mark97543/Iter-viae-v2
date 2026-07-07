@@ -101,3 +101,18 @@ pub fn list_saved_routes(app_handle: tauri::AppHandle) -> Result<Vec<RouteFile>,
     
 
 }
+
+//Load the selected file
+#[tauri::command]
+pub async fn load_trip_data(app: AppHandle, file_name: String) -> Result<String, String> {
+    // Get the path to your storage directory
+    let mut path = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    path.push("routes");
+    path.push(file_name);
+
+    // Read the file content
+    let content = fs::read_to_string(path)
+        .map_err(|e| format!("Could not read file: {}", e))?;
+        
+    Ok(content)
+}
