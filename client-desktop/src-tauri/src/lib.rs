@@ -49,7 +49,10 @@ pub fn run() {
                 }
                 "loadMap" => {
                     app_handle.emit("open-load-map-modal", ()).unwrap();
-                }
+                },
+                "load_route" => {
+                    let _ = app_handle.emit("load-route", ());
+                },
                 "show_shortcuts" => {
                     let _ = app_handle.emit("open-shortcuts-modal", ());
                 }

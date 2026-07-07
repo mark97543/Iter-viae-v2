@@ -5,6 +5,7 @@ import TacticalMap from './components/map/TacticalMap';
 import { TripProvider } from './context/TripContext';
 import { ModalProvider } from './context/ModalContext';
 import ShortcutMenu from './components/menus/ShortcutMenu';
+import LoadTripModal from './components/modals/LoadTripModal';
 
 
 
@@ -33,6 +34,7 @@ function App() {
           <TacticalMap />
           {loadMapModalOpen && <LoadMapModal onClose={closeMapModal} />}
           <ShortcutMenu />
+          < LoadTripModal />
         </TripProvider>
       </ModalProvider>
     </div>

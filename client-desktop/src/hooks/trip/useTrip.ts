@@ -15,10 +15,15 @@ export function useTrip() {
     const [stats, setStats] = useState({ distance: 0, duration: 0 });
     const [tripTitle, setTripTitle] = useState('');
     const { openModal } = useModal();
+    const [showLoadTripModal, setShowLoadTripModal] = useState(false);
 
     //Save Trip Function
     const save_trip = async () => {
         let currentTitle = tripTitle;
+
+        console.log("Current Title= ", currentTitle)
+        console.log("Exists?: ", !currentTitle)
+        console.log("Empty?: ", currentTitle.trim() === "")
 
         // Loop until we get a valid title or the user cancels
         while (!currentTitle || currentTitle.trim() === "") {
@@ -80,12 +85,36 @@ export function useTrip() {
                 }
 
             }
-        })
+        });
+
+        const unlisten3 = listen("load-route", async () => {
+            console.log('Load Trip')
+
+            if (waypoints.length > 0 || tripTitle.trim() !== "") {
+                const userResponse = await openModal("SAVE_PROGRESS");
+
+                if (userResponse === "no") {
+                    setWaypoints([]);
+                    setTripTitle("");
+                }
+
+                if (userResponse === "yes") {
+                    save_trip();
+                    setWaypoints([]);
+                    setTripTitle("");
+                }
+
+            }
+
+            setShowLoadTripModal(true);
+
+        });
 
         // Cleanup listener on unmount
         return () => {
             unlisten.then(f => f());
             unlisten2.then(f => f());
+            unlisten3.then(f => f());
         };
     }, [waypoints, tripTitle, openModal]); // Re-run if these change
 
@@ -126,6 +155,8 @@ export function useTrip() {
         deleteWaypoint,
         moveWaypoint,
         tripTitle,
-        setTripTitle
+        setTripTitle,
+        showLoadTripModal,
+        setShowLoadTripModal
     };
 }

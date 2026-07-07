@@ -7,8 +7,8 @@ import { useState } from "react";
 import { DndContext, closestCenter } from "@dnd-kit/core";
 import { arrayMove, SortableContext, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { useTripContext } from "../../context/TripContext";
 import { Waypoint } from "../../types/navigation.types";
+import { useTripContext } from "../../context/TripContext";
 
 function LeftBar() {
     const [expandBar, setExpandBar] = useState(true);
@@ -80,7 +80,7 @@ function LeftBar() {
                                     {waypoints.length === 0 && (
                                         <div className="text-center p-6 border border-dashed border-white/10 rounded-xl text-neutral-500 text-sm flex flex-col items-center gap-2">
                                             <span className="text-2xl">🗺️</span>
-                                            <p>No waypoints yet.<br/>Click the map to add one.</p>
+                                            <p>No waypoints yet.<br />Click the map to add one.</p>
                                         </div>
                                     )}
                                 </SortableContext>

@@ -3,6 +3,8 @@
 use tauri::{AppHandle, Runtime, Manager, Emitter};
 use std::process::Command;
 use std::io::Write;
+use std::fs;
+use serde::Serialize;
 
 #[tauri::command]
 pub fn open_data_folder<R: Runtime>(app: AppHandle<R>)->Result<(), String>{
@@ -36,8 +38,13 @@ pub fn save_route<R: Runtime>(app : AppHandle<R>, route_name:String, data:String
     path.push("routes");
     std::fs::create_dir_all(&path).map_err(|e| e.to_string())?;
 
-    //Define File Name 
-    path.push(format!("{}", route_name));
+    //Define File Name
+    let file_name = if route_name.ends_with(".viae") {
+        route_name
+    } else {
+        format!("{}.viae", route_name)
+    };
+    path.push(file_name);
 
     //Write the json file
     let mut file = std::fs::File::create(path).map_err(|e| e.to_string())?;
@@ -51,4 +58,46 @@ pub fn trigger_new_trip<R: Runtime>(app: AppHandle<R>)->Result<(), String>{
     //emit signal to frontend
     app.emit("trigger-new-trip", ()).map_err(|e| e.to_string())?;
     Ok(())
+}
+
+//Look at files and send to the front end. 
+
+#[derive(Serialize)]
+pub struct RouteFile{
+    name:String,
+    path:String,
+}
+
+#[tauri::command]
+pub fn list_saved_routes(app_handle: tauri::AppHandle) -> Result<Vec<RouteFile>, String> {
+    //Get app direcotry
+    let mut path = app_handle.path().app_data_dir().map_err(|e| e.to_string())?;
+    path.push("routes");
+
+    //ensure folder exists
+    if !path.exists() {
+        return Ok(vec![]); // Return empty list if no folder yet
+    }
+
+    //Read The Folder
+    let paths = fs::read_dir(path).map_err(|e| e.to_string())?;
+    let routes = paths
+        .filter_map(|entry| entry.ok())
+        .filter(|entry| {
+            let path = entry.path();
+            if !path.is_file() {
+                return false;
+            }
+            let ext = path.extension().and_then(|s| s.to_str());
+            ext == Some("viae") || ext.is_none()
+        })
+        .map(|entry| RouteFile {
+            name: entry.file_name().to_string_lossy().to_string(),
+            path: entry.path().to_string_lossy().to_string(),
+        })
+        .collect();
+
+    Ok(routes)
+    
+
 }

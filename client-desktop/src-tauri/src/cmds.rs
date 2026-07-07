@@ -17,7 +17,8 @@ macro_rules! generate_commands {
             crate::commands::map::delete_routing_graph,
             crate::commands::routing::calculate_route,
             crate::storage::open_data_folder,
-            crate::storage::save_route
+            crate::storage::save_route,
+            crate::storage::list_saved_routes
         ]
     };
 }
