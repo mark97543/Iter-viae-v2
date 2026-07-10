@@ -2,23 +2,48 @@
 import { useEffect, useState } from "react";
 import { useTripContext } from "../../context/TripContext";
 import { invoke } from "@tauri-apps/api/core";
+import trashIcon from '../../assets/icons/trash.png';
+import { useModal } from "../../context/ModalContext";
 
 const LoadTripModal = () => {
     const { showLoadTripModal, setShowLoadTripModal } = useTripContext();
     const [routes, setRoutes] = useState<any[]>([]);
-    const { setWaypoints, setTripTitle } = useTripContext();
+    const { setWaypoints, setTripTitle, tripTitle } = useTripContext();
+    const { openModal } = useModal();
+
+    const fetchRoutes = async () => {
+        try {
+            const data = await invoke('list_saved_routes');
+            setRoutes(data as any[]);
+        } catch (err) {
+            console.error("Failed to list routes:", err);
+        }
+    }
 
     useEffect(() => {
-        const fetchRoutes = async () => {
-            try {
-                const data = await invoke('list_saved_routes');
-                setRoutes(data as any[]);
-            } catch (err) {
-                console.error("Failed to list routes:", err);
-            }
-        }
         fetchRoutes();
     }, [showLoadTripModal])
+
+    const deleteTrip = async (fileName: string) => {
+        let filename = fileName
+
+        //Confirm Deletion
+        let userDecision = await openModal("DELETE_TRIP")
+
+        if (userDecision === 'yes') {
+            try {
+                await invoke('delete_route', { fileName: filename });
+                await fetchRoutes();
+                if (tripTitle == filename.replace(/\.viae$/, "")) {
+                    setWaypoints([]);
+                    setTripTitle("");
+                }
+            } catch (err) {
+                console.error("Failed to delete route:", err);
+            }
+        }
+
+    }
 
     if (!showLoadTripModal) return null;
 
@@ -40,29 +65,40 @@ const LoadTripModal = () => {
                         </div>
                     ) : (
                         routes.map((route, index) => (
-                            <button
+                            <div
                                 key={index}
-                                onClick={async () => {
-                                    try {
-                                        //Invoke the rust command to read file
-                                        const tripData = await invoke<string>('load_trip_data', { fileName: route.name });
-                                        const parsedData = JSON.parse(tripData);
-                                        setWaypoints(parsedData.waypoints || []);
-                                        setTripTitle(parsedData.title || route.name.replace(/\.viae$/, ""));
-                                        setShowLoadTripModal(false);
-                                    } catch (err) {
-                                        console.error("Failed to load trip data:", err);
-                                    }
-                                }}
-                                className="w-full cursor-pointer text-left group flex items-center justify-between p-4 rounded-xl bg-neutral-800/30 hover:bg-neutral-800 border border-transparent hover:border-neutral-700 transition-all duration-200"
+                                className="w-full group flex items-center justify-between p-2 rounded-xl bg-neutral-800/30 hover:bg-neutral-800 border border-transparent hover:border-neutral-700 transition-all duration-200"
                             >
-                                <span className="text-neutral-200 group-hover:text-white font-medium truncate">
-                                    {route.name.replace(/\.viae$/, "")}
-                                </span>
-                                <span className="text-xs text-neutral-500 group-hover:text-neutral-400 transition-colors">
-                                    Load &rarr;
-                                </span>
-                            </button>
+                                <button
+                                    onClick={async () => {
+                                        try {
+                                            //Invoke the rust command to read file
+                                            const tripData = await invoke<string>('load_trip_data', { fileName: route.name });
+                                            const parsedData = JSON.parse(tripData);
+                                            setWaypoints(parsedData.waypoints || []);
+                                            setTripTitle(parsedData.title || route.name.replace(/\.viae$/, ""));
+                                            setShowLoadTripModal(false);
+                                        } catch (err) {
+                                            console.error("Failed to load trip data:", err);
+                                        }
+                                    }}
+                                    className="flex-1 text-left cursor-pointer p-2 outline-none"
+                                >
+                                    <span className="text-neutral-200 group-hover:text-white font-medium truncate">
+                                        {route.name.replace(/\.viae$/, "")}
+                                    </span>
+                                </button>
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        deleteTrip(route.name)
+                                    }}
+                                    className="p-2 cursor-pointer opacity-70 hover:opacity-100 transition-opacity outline-none"
+                                    title="Delete Trip"
+                                >
+                                    <img className="h-4 w-4" src={trashIcon} alt="Delete" style={{ filter: 'brightness(0) saturate(100%) invert(60%) sepia(80%) saturate(1500%) hue-rotate(330deg) brightness(100%) contrast(100%)' }} />
+                                </button>
+                            </div>
                         ))
                     )}
                 </div>

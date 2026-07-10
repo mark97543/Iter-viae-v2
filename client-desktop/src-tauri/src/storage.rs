@@ -140,3 +140,19 @@ pub async fn import_route(app: AppHandle, file_name: String) -> Result<String, S
         
     Ok(content)
 }
+
+//delete route
+#[tauri::command]
+pub async fn delete_route(app:AppHandle, file_name:String)->Result<(),String>{
+    //Path to the route file
+    let mut path = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    path.push("routes");
+    path.push(file_name);
+
+    println!("DEBUG: Attempting to delete file at: {:?}", path);
+
+    //Delete the route file
+    fs::remove_file(path)
+        .map_err(|e| format!("Could not delete file: {}", e))?;
+    Ok(())
+}

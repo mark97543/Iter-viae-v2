@@ -54,5 +54,10 @@ export const modalConfig: Record<string, ModalConfigItem> = {
         title: "Save Progress",
         message: "Would you like to save your current trip before you continue? Selecting no you will lose all unsaved data",
         type: "choice3"
+    },
+    "DELETE_TRIP": {
+        title: "Delete Trip",
+        message: "Are you sure you want to delete this trip?",
+        type: "choice3"
     }
 };
