@@ -59,7 +59,10 @@ pub fn run() {
                 },
                 "export_trip"=>{
                     let _ = app_handle.emit("open-save-dialog", ());
-                }
+                },
+                "import_trip"=>{
+                    let _ = app_handle.emit("open-load-dialog", ());
+                },
                 _ => {}
             }
         })

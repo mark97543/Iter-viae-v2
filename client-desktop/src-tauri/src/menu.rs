@@ -12,9 +12,10 @@ pub fn create_menu<R: Runtime>(app: &tauri::AppHandle<R>) -> tauri::Result<Menu<
     let save_item = MenuItem::with_id(app, "save_route", "Save Route",true, Some("Ctrl+S"))?;
     let load_trip = MenuItem::with_id(app, "load_route", "Load Route",true, Some("Ctrl+O"))?;
     let export_trip = MenuItem::with_id(app, "export_trip", "Export Trip",true, Some("Ctrl+E"))?;
+    let import_trip = MenuItem::with_id(app, "import_trip", "Import Trip",true, Some("Ctrl+I"))?;
     let quit_item = MenuItem::with_id(app, "quit", "Exit", true, Some("CmdOrCtrl+Q"))?;
     let separator = PredefinedMenuItem::separator(app)?;
-    let file_menu = Submenu::with_items(app, "File", true, &[ &new_trip, &separator,&save_item,&load_trip,&separator,&export_trip,&separator ,&quit_item])?;
+    let file_menu = Submenu::with_items(app, "File", true, &[ &new_trip, &separator,&save_item,&load_trip,&separator,&export_trip,&separator ,&import_trip,&separator ,&quit_item])?;
 
     //Maps Menu
     let loadmaps_item = MenuItem::with_id(app, "loadMap", "Load Map", true, None::<&str>)?;

@@ -19,7 +19,8 @@ macro_rules! generate_commands {
             crate::storage::open_data_folder,
             crate::storage::save_route,
             crate::storage::list_saved_routes,
-            crate::storage::load_trip_data
+            crate::storage::load_trip_data,
+            crate::storage::import_route
             
         ]
     };

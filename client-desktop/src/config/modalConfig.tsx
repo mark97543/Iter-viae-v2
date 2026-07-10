@@ -38,6 +38,14 @@ export const modalConfig: Record<string, ModalConfigItem> = {
                     <span>Load Trip</span>
                     <kbd className="bg-neutral-800 border border-neutral-600 px-2 rounded text-neutral-300">Cmd/Ctrl + O</kbd>
                 </div>
+                <div className="flex justify-between border-b border-neutral-700 pb-2">
+                    <span>Import Trip</span>
+                    <kbd className="bg-neutral-800 border border-neutral-600 px-2 rounded text-neutral-300">Cmd/Ctrl + I</kbd>
+                </div>
+                <div className="flex justify-between border-b border-neutral-700 pb-2">
+                    <span>Export Trip</span>
+                    <kbd className="bg-neutral-800 border border-neutral-600 px-2 rounded text-neutral-300">Cmd/Ctrl + E</kbd>
+                </div>
             </div>
         ),
         type: "alert"

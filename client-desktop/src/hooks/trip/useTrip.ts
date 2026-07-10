@@ -8,7 +8,7 @@ import { RoutingService } from "../../services/routing";
 import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
 import { useModal } from "../../context/ModalContext";
-import { save } from "@tauri-apps/plugin-dialog";
+import { save, open } from "@tauri-apps/plugin-dialog";
 
 export function useTrip() {
     const [waypoints, setWaypoints] = useState<any[]>([]);
@@ -85,7 +85,6 @@ export function useTrip() {
         });
 
         const unlisten3 = listen("load-route", async () => {
-            console.log('Load Trip')
 
             if (waypoints.length > 0 || tripTitle.trim() !== "") {
                 const userResponse = await openModal("SAVE_PROGRESS");
@@ -132,12 +131,45 @@ export function useTrip() {
             }
         })
 
+        const unlisten5 = listen("open-load-dialog", async () => {
+
+            //Open the native OS file picker
+            const selectedFile = await open({
+                multiple: false,
+                filters: [{
+                    name: 'Iter Viae Route',
+                    extensions: ['viae']
+                }]
+            });
+
+            //Handle File Selection
+            const filePath = typeof selectedFile === 'string' ? selectedFile : null;
+
+            if (filePath) {
+                try {
+                    //Invoke rust to read file
+                    const fileContent: string = await invoke("import_route", { fileName: filePath });
+
+                    //Parse the data and update the react state
+                    const parsedData = JSON.parse(fileContent);
+                    setWaypoints(parsedData.waypoints);
+                    setTripTitle(parsedData.title);
+
+                    console.log("Trip Loaded Successfully!")
+                } catch (err) {
+                    console.error("Error loading route from file:", err);
+                }
+            }
+
+        })
+
         // Cleanup listener on unmount
         return () => {
             unlisten.then(f => f());
             unlisten2.then(f => f());
             unlisten3.then(f => f());
             unlisten4.then(f => f());
+            unlisten5.then(f => f());
         };
     }, [waypoints, tripTitle, openModal]); // Re-run if these change
 

@@ -127,3 +127,16 @@ pub async fn load_trip_data(app: AppHandle, file_name: String) -> Result<String,
         
     Ok(content)
 }
+
+//Import Route from Selected Path
+#[tauri::command]
+pub async fn import_route(app: AppHandle, file_name: String) -> Result<String, String> {
+    // Get the path to your storage directory
+    let path = PathBuf::from(file_name);  
+
+    // Read the file content
+    let content = fs::read_to_string(path)
+        .map_err(|e| format!("Could not read file: {}", e))?;
+        
+    Ok(content)
+}
