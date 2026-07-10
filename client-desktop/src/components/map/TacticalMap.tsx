@@ -19,7 +19,7 @@ function TacticalMap() {
     const [clickedPoi, setClickedPoi] = useState<any | null>(null);
     const [addPoint, setAddPoint] = useState(false);
     const draftMarkerRef = useRef<maplibregl.Marker | null>(null);
-    const { routeShape, addWaypoint, waypoints, moveWaypoint } = useTripContext();
+    const { routeShape, addWaypoint, waypoints, moveWaypoint, currentDay } = useTripContext();
 
     // Register Layers
     useEffect(() => {
@@ -106,14 +106,20 @@ function TacticalMap() {
         const SOURCE_ID = 'route-source';
         const LAYER_ID = 'route-line';
 
-        // The data is already formatted and ready from useTrip()
+        // The data is already formatted and ready from useTrip() - now it's an array of daily routes
         const geojsonData: GeoJSON.FeatureCollection = {
             type: 'FeatureCollection',
-            features: routeShape.length >= 2 ? [{
+            features: routeShape.map(dayRoute => ({
                 type: 'Feature',
-                properties: {},
-                geometry: { type: 'LineString', coordinates: routeShape }
-            }] : []
+                properties: {
+                    day: dayRoute.day,
+                    isCurrentDay: dayRoute.day === currentDay
+                },
+                geometry: {
+                    type: 'LineString',
+                    coordinates: dayRoute.routeShape
+                }
+            }))
         };
 
         if (!map.getSource(SOURCE_ID)) {
@@ -124,17 +130,35 @@ function TacticalMap() {
                 beforeId = 'waypoint-circle-layer';
             }
 
+            // Inactive Days Layer (Red, Dashed, Faded)
             map.addLayer({
-                id: LAYER_ID,
+                id: 'route-line-inactive',
                 type: 'line',
                 source: SOURCE_ID,
+                filter: ['!=', ['get', 'isCurrentDay'], true],
+                layout: { 'line-join': 'round', 'line-cap': 'round' },
+                paint: { 
+                    'line-color': '#ff4444', 
+                    'line-width': 4,
+                    'line-dasharray': [2, 2],
+                    'line-opacity': 0.5
+                }
+            }, beforeId);
+
+            // Active Day Layer (Solid White)
+            map.addLayer({
+                id: 'route-line-active',
+                type: 'line',
+                source: SOURCE_ID,
+                filter: ['==', ['get', 'isCurrentDay'], true],
                 layout: { 'line-join': 'round', 'line-cap': 'round' },
                 paint: { 'line-color': '#ffffff', 'line-width': 6 }
             }, beforeId);
+
         } else {
             (map.getSource(SOURCE_ID) as maplibregl.GeoJSONSource).setData(geojsonData);
         }
-    }, [map, routeShape]);
+    }, [map, routeShape, currentDay]);
 
     return (
         <div className="relative w-full h-full bg-gray-900">
