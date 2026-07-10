@@ -9,14 +9,16 @@ import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
 import { useModal } from "../../context/ModalContext";
 import { save, open } from "@tauri-apps/plugin-dialog";
+import { Waypoint, createDefaultWaypoint } from "../../types/waypoints";
 
 export function useTrip() {
-    const [waypoints, setWaypoints] = useState<any[]>([]);
+    const [waypoints, setWaypoints] = useState<Waypoint[]>([]);
     const [routeShape, setRouteShape] = useState<any[]>([]);
     const [stats, setStats] = useState({ distance: 0, duration: 0 });
     const [tripTitle, setTripTitle] = useState('');
     const { openModal } = useModal();
     const [showLoadTripModal, setShowLoadTripModal] = useState(false);
+    const [currentDay, setCurrentDay] = useState(1);
 
     //Save Trip Function
     const save_trip = async () => {
@@ -190,7 +192,22 @@ export function useTrip() {
     }, [waypoints]);
 
     const addWaypoint = (poi: any) => {
-        setWaypoints(prev => [...prev, { ...poi, id: crypto.randomUUID() }]);
+        setWaypoints(prev => {
+            // Calculate the next stop index for the current day
+            const waypointsForDay = prev.filter(wp => wp.day === currentDay);
+            const nextStopIndex = waypointsForDay.length > 0
+                ? Math.max(...waypointsForDay.map(wp => wp.stopIndex || 0)) + 1
+                : 0;
+
+            const newWaypoint = createDefaultWaypoint(poi.coord, poi.type);
+
+            return [...prev, {
+                ...newWaypoint,
+                ...poi,
+                day: currentDay,
+                stopIndex: nextStopIndex
+            }];
+        });
     };
 
     const deleteWaypoint = (id: string) => {
@@ -212,6 +229,8 @@ export function useTrip() {
         tripTitle,
         setTripTitle,
         showLoadTripModal,
-        setShowLoadTripModal
+        setShowLoadTripModal,
+        currentDay,
+        setCurrentDay
     };
 }

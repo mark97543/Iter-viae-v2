@@ -6,7 +6,7 @@
 
 import { invoke } from "@tauri-apps/api/core";
 import { decodePolyline6 } from "../utils/polyline";
-import { Waypoint } from "../types/navigation.types";
+import { Waypoint } from "../types/waypoints";
 
 export const RoutingService = {
     /**

@@ -1,4 +1,4 @@
-import { Waypoint } from "../../types/navigation.types";
+import { Waypoint } from "../../types/waypoints";
 import { useEffect, useRef } from "react";
 import maplibregl from "maplibre-gl";
 

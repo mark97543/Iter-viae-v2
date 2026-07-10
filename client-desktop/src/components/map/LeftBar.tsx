@@ -3,30 +3,52 @@ import hamButIcon from '../../assets/icons/HamBut.png';
 import saveIcon from '../../assets/icons/save.png';
 import trashIcon from '../../assets/icons/trash.png';
 import pencilIcon from '../../assets/icons/pencil.png';
-import { useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { DndContext, closestCenter } from "@dnd-kit/core";
 import { arrayMove, SortableContext, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Waypoint } from "../../types/navigation.types";
+import { Waypoint } from "../../types/waypoints";
 import { useTripContext } from "../../context/TripContext";
+import Dropdown from './LeftBarComponents/Dropdown';
 
 function LeftBar() {
     const [expandBar, setExpandBar] = useState(true);
     const [editId, setEditId] = useState<string | null>(null);
-    const { waypoints, setWaypoints, setTripTitle, tripTitle } = useTripContext();
+    const { waypoints, setWaypoints, setTripTitle, tripTitle, currentDay } = useTripContext();
 
     const BarSelect = () => {
         setExpandBar(!expandBar);
     }
 
+    const activeDayWaypoints = useMemo(() => {
+        return waypoints
+            .filter((wp: Waypoint) => wp.day === currentDay)
+            .sort((a: Waypoint, b: Waypoint) => (a.stopIndex || 0) - (b.stopIndex || 0));
+    }, [waypoints, currentDay]);
+
     const handleDragEnd = (event: any) => {
         const { active, over } = event;
         if (!over || active.id === over.id) return;
 
-        const oldIndex = waypoints.findIndex((w: any) => w.id === active.id);
-        const newIndex = waypoints.findIndex((w: any) => w.id === over.id);
+        // Find the old and new index specifically within the active day's array
+        const oldIndex = activeDayWaypoints.findIndex((w: any) => w.id === active.id);
+        const newIndex = activeDayWaypoints.findIndex((w: any) => w.id === over.id);
 
-        setWaypoints(arrayMove(waypoints, oldIndex, newIndex));
+        if (oldIndex === -1 || newIndex === -1) return;
+
+        const movedArray = arrayMove(activeDayWaypoints, oldIndex, newIndex);
+
+        // Reindex only the current day's waypoints
+        const reindexedDay = movedArray.map((wp: any, index: number) => ({
+            ...wp,
+            stopIndex: index
+        }));
+
+        // Merge the updated day's waypoints back into the full waypoints array
+        setWaypoints((prev: Waypoint[]) => {
+            const otherDays = prev.filter(wp => wp.day !== currentDay);
+            return [...otherDays, ...reindexedDay];
+        });
     };
 
     return (
@@ -63,16 +85,17 @@ function LeftBar() {
 
                     {/* Content Section */}
                     <div className="flex flex-col gap-4 flex-1 min-h-0 overflow-y-auto pr-1 custom-scrollbar">
+                        <Dropdown />
                         <h1 className="text-xs font-bold tracking-widest uppercase text-neutral-400 shrink-0 px-1">Waypoints</h1>
                         <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                             <div className="flex flex-col gap-3 pb-4">
-                                <SortableContext items={waypoints ? waypoints.map((w: any) => w.id) : []} strategy={verticalListSortingStrategy}>
+                                <SortableContext items={activeDayWaypoints ? activeDayWaypoints.map((w: any) => w.id) : []} strategy={verticalListSortingStrategy}>
                                     {/* Map Through the Waypoints and display them */}
-                                    {waypoints && waypoints.map((point: any, index: any) => (
+                                    {activeDayWaypoints && activeDayWaypoints.map((point: any, index: any) => (
                                         <SortableWaypoint
                                             key={point.id}
                                             point={point}
-                                            index={index}
+                                            index={index + 1}
                                             editingId={editId}
                                             setEditingId={setEditId}
                                         />
