@@ -16,6 +16,7 @@ pub struct ValhallaState(pub Mutex<Option<Actor>>);
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .manage(ValhallaState(Mutex::new(None)))
         // We use the macro here to keep this file clean!
         .invoke_handler(crate::generate_commands!())
@@ -55,6 +56,9 @@ pub fn run() {
                 },
                 "show_shortcuts" => {
                     let _ = app_handle.emit("open-shortcuts-modal", ());
+                },
+                "export_trip"=>{
+                    let _ = app_handle.emit("open-save-dialog", ());
                 }
                 _ => {}
             }

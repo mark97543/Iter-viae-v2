@@ -5,6 +5,7 @@ use std::process::Command;
 use std::io::Write;
 use std::fs;
 use serde::Serialize;
+use std::path::PathBuf;
 
 #[tauri::command]
 pub fn open_data_folder<R: Runtime>(app: AppHandle<R>)->Result<(), String>{
@@ -30,25 +31,35 @@ pub fn open_data_folder<R: Runtime>(app: AppHandle<R>)->Result<(), String>{
 
 //Save file
 #[tauri::command]
-pub fn save_route<R: Runtime>(app : AppHandle<R>, route_name:String, data:String)-> Result<(), String>{
-    //get local data folder
-    let mut path = app.path().app_data_dir().map_err(|e| e.to_string())?;
-
-    //ensure routes sundirectory exists
-    path.push("routes");
-    std::fs::create_dir_all(&path).map_err(|e| e.to_string())?;
-
-    //Define File Name
-    let file_name = if route_name.ends_with(".viae") {
-        route_name
+pub fn save_route<R: Runtime>(
+    app: AppHandle<R>, 
+    route_name: String, 
+    data: String, 
+    custom_path: Option<String> // New optional argument
+) -> Result<(), String> {
+    
+    let path = if let Some(p) = custom_path {
+        // User provided a path (from Save As dialog)
+        PathBuf::from(p)
     } else {
-        format!("{}.viae", route_name)
+        // No path provided, use the hardcoded default
+        let mut p = app.path().app_data_dir().map_err(|e| e.to_string())?;
+        p.push("routes");
+        
+        // Ensure folder exists for default path
+        std::fs::create_dir_all(&p).map_err(|e| e.to_string())?;
+        
+        let file_name = if route_name.ends_with(".viae") {
+            route_name
+        } else {
+            format!("{}.viae", route_name)
+        };
+        p.push(file_name);
+        p
     };
-    path.push(file_name);
 
-    //Write the json file
-    let mut file = std::fs::File::create(path).map_err(|e| e.to_string())?;
-    file.write_all(data.as_bytes()).map_err(|e| e.to_string())?;
+    // Write the file to the determined path
+    std::fs::write(path, data.as_bytes()).map_err(|e| e.to_string())?;
     Ok(())
 }
 

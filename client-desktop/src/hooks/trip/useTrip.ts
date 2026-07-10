@@ -8,6 +8,7 @@ import { RoutingService } from "../../services/routing";
 import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
 import { useModal } from "../../context/ModalContext";
+import { save } from "@tauri-apps/plugin-dialog";
 
 export function useTrip() {
     const [waypoints, setWaypoints] = useState<any[]>([]);
@@ -20,10 +21,6 @@ export function useTrip() {
     //Save Trip Function
     const save_trip = async () => {
         let currentTitle = tripTitle;
-
-        console.log("Current Title= ", currentTitle)
-        console.log("Exists?: ", !currentTitle)
-        console.log("Empty?: ", currentTitle.trim() === "")
 
         // Loop until we get a valid title or the user cancels
         while (!currentTitle || currentTitle.trim() === "") {
@@ -110,11 +107,37 @@ export function useTrip() {
 
         });
 
+        const unlisten4 = listen("open-save-dialog", async () => {
+            //Open Native Dialog as save-as
+            const filePath = await save({
+                filters: [{
+                    name: 'Iter Viae Route',
+                    extensions: ['viae']
+                }],
+                defaultPath: `${tripTitle || 'my-route'}.viae`
+            });
+
+            if (filePath) {
+                // Call the unified command
+                const dataToSave = JSON.stringify({
+                    title: tripTitle,
+                    waypoints: waypoints
+                });
+
+                await invoke("save_route", {
+                    routeName: tripTitle,
+                    data: dataToSave,
+                    customPath: filePath // Rust now handles this via Option<String>
+                });
+            }
+        })
+
         // Cleanup listener on unmount
         return () => {
             unlisten.then(f => f());
             unlisten2.then(f => f());
             unlisten3.then(f => f());
+            unlisten4.then(f => f());
         };
     }, [waypoints, tripTitle, openModal]); // Re-run if these change
 
