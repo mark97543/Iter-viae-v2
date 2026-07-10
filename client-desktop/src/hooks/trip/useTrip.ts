@@ -96,8 +96,8 @@ export function useTrip() {
 
                 if (userResponse === "yes") {
                     save_trip();
-                    setWaypoints([]);
-                    setTripTitle("");
+                    // setWaypoints([]);
+                    // setTripTitle("");
                 }
 
             }
