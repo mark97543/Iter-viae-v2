@@ -21,6 +21,7 @@ const ItinSheet = ({ visible }: { visible: boolean }) => {
     //Find the number of days
     const maxDays = Math.max(1, ...waypoints.map((wp: Waypoint) => wp.day || 1));
 
+
     return (
         <div
             className='
@@ -68,10 +69,9 @@ const ItinSheet = ({ visible }: { visible: boolean }) => {
                             type="date"
                             value={tripDate ? new Date(tripDate).toISOString().split('T')[0] : ''}
                             onChange={(e) => {
-                                // Create a new date from the string, set it as an object
                                 const newDate = new Date(e.target.value);
                                 setTripDate(newDate);
-                                e.target.blur(); // Force close the native picker
+                                e.target.blur();
                             }}
                             className='w-full bg-black/40 border border-white/10 hover:border-white/20 rounded-xl p-3 text-neutral-300 text-sm focus:outline-none focus:border-tactical-red focus:ring-1 focus:ring-tactical-red/50 transition-all shadow-inner [color-scheme:dark]'
                         />
