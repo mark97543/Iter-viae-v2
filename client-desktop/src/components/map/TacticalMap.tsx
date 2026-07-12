@@ -157,6 +157,7 @@ function TacticalMap() {
 
         } else {
             (map.getSource(SOURCE_ID) as maplibregl.GeoJSONSource).setData(geojsonData);
+            map.triggerRepaint();
         }
     }, [map, routeShape, currentDay]);
 
