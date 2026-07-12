@@ -6,6 +6,8 @@ import { TripProvider } from './context/TripContext';
 import { ModalProvider } from './context/ModalContext';
 import ShortcutMenu from './components/menus/ShortcutMenu';
 import LoadTripModal from './components/modals/LoadTripModal';
+import { LayoutProvider } from './context/LayoutContext';
+
 
 
 
@@ -31,10 +33,12 @@ function App() {
     <div className="bg-canvas-panel text-ui-text h-screen w-screen overflow-hidden">
       <ModalProvider>
         <TripProvider>
-          <TacticalMap />
-          {loadMapModalOpen && <LoadMapModal onClose={closeMapModal} />}
-          <ShortcutMenu />
-          < LoadTripModal />
+          <LayoutProvider>
+            <TacticalMap />
+            {loadMapModalOpen && <LoadMapModal onClose={closeMapModal} />}
+            <ShortcutMenu />
+            < LoadTripModal />
+          </LayoutProvider>
         </TripProvider>
       </ModalProvider>
     </div>

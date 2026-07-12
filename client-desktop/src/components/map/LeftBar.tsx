@@ -10,14 +10,15 @@ import { CSS } from "@dnd-kit/utilities";
 import { Waypoint } from "../../types/waypoints";
 import { useTripContext } from "../../context/TripContext";
 import Dropdown from './LeftBarComponents/Dropdown';
+import { useLayout } from "../../context/LayoutContext";
 
 function LeftBar() {
-    const [expandBar, setExpandBar] = useState(true);
+    const { isLeftBarOpen, setIsLeftBarOpen } = useLayout();
     const [editId, setEditId] = useState<string | null>(null);
     const { waypoints, setWaypoints, setTripTitle, tripTitle, currentDay } = useTripContext();
 
     const BarSelect = () => {
-        setExpandBar(!expandBar);
+        setIsLeftBarOpen(!isLeftBarOpen);
     }
 
     const activeDayWaypoints = useMemo(() => {
@@ -60,10 +61,10 @@ function LeftBar() {
             text-neutral-200 flex flex-col items-start justify-start
             overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.5)]
             transition-all duration-500 ease-in-out
-            ${expandBar ? 'w-[320px] h-[calc(100%-2rem)]' : 'w-14 h-14 p-2.5 rounded-xl'}
+            ${isLeftBarOpen ? 'w-[320px] h-[calc(100%-2rem)]' : 'w-14 h-14 p-2.5 rounded-xl'}
             `}
         >
-            {expandBar ? (
+            {isLeftBarOpen ? (
                 <div className="flex flex-col gap-5 w-full h-full max-h-full min-w-[200px]">
                     {/* Header */}
                     <div className="flex items-center gap-2.5 border-b border-white/10 pb-4 shrink-0">

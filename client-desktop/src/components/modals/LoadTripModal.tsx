@@ -8,7 +8,7 @@ import { useModal } from "../../context/ModalContext";
 const LoadTripModal = () => {
     const { showLoadTripModal, setShowLoadTripModal } = useTripContext();
     const [routes, setRoutes] = useState<any[]>([]);
-    const { setWaypoints, setTripTitle, tripTitle } = useTripContext();
+    const { setWaypoints, setTripTitle, tripTitle, setTripSummary } = useTripContext();
     const { openModal } = useModal();
 
     const fetchRoutes = async () => {
@@ -77,6 +77,7 @@ const LoadTripModal = () => {
                                             const parsedData = JSON.parse(tripData);
                                             setWaypoints(parsedData.waypoints || []);
                                             setTripTitle(parsedData.title || route.name.replace(/\.viae$/, ""));
+                                            setTripSummary(parsedData.summary || '');
                                             setShowLoadTripModal(false);
                                         } catch (err) {
                                             console.error("Failed to load trip data:", err);

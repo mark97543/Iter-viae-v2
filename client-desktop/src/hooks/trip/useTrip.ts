@@ -19,6 +19,26 @@ export function useTrip() {
     const { openModal } = useModal();
     const [showLoadTripModal, setShowLoadTripModal] = useState(false);
     const [currentDay, setCurrentDay] = useState(1);
+    const [tripSummary, setTripSummary] = useState('');
+
+
+    //Data Package
+    function data_package() {
+        const dataToSave = JSON.stringify({
+            title: tripTitle,
+            summary: tripSummary,
+            waypoints: waypoints
+        });
+        return dataToSave;
+    }
+
+    //clearing Cunction
+
+    function clear_trip() {
+        setWaypoints([]);
+        setTripTitle("");
+        setTripSummary("");
+    }
 
     //Save Trip Function
     const save_trip = async () => {
@@ -39,14 +59,9 @@ export function useTrip() {
                 setTripTitle(currentTitle);
                 break;
             }
-            // Otherwise, the loop repeats and shows the modal again
         }
 
-        // This code runs when the user clicks "Save Route" in the menu
-        const dataToSave = JSON.stringify({
-            title: currentTitle,
-            waypoints: waypoints
-        });
+        const dataToSave = data_package();
 
         try {
             await invoke("save_route", {
@@ -73,16 +88,13 @@ export function useTrip() {
                 const userResponse = await openModal("SAVE_PROGRESS");
 
                 if (userResponse === "no") {
-                    setWaypoints([]);
-                    setTripTitle("");
+                    clear_trip();
                 }
 
                 if (userResponse === "yes") {
                     save_trip();
-                    setWaypoints([]);
-                    setTripTitle("");
+                    clear_trip();
                 }
-
             }
         });
 
@@ -92,14 +104,12 @@ export function useTrip() {
                 const userResponse = await openModal("SAVE_PROGRESS");
 
                 if (userResponse === "no") {
-                    setWaypoints([]);
-                    setTripTitle("");
+                    clear_trip();
                 }
 
                 if (userResponse === "yes") {
                     save_trip();
-                    // setWaypoints([]);
-                    // setTripTitle("");
+                    //clear_trip();
                 }
 
             }
@@ -120,10 +130,7 @@ export function useTrip() {
 
             if (filePath) {
                 // Call the unified command
-                const dataToSave = JSON.stringify({
-                    title: tripTitle,
-                    waypoints: waypoints
-                });
+                const dataToSave = data_package();
 
                 await invoke("save_route", {
                     routeName: tripTitle,
@@ -156,6 +163,7 @@ export function useTrip() {
                     const parsedData = JSON.parse(fileContent);
                     setWaypoints(parsedData.waypoints);
                     setTripTitle(parsedData.title);
+                    setTripSummary(parsedData.summary);
 
                     console.log("Trip Loaded Successfully!")
                 } catch (err) {
@@ -173,7 +181,7 @@ export function useTrip() {
             unlisten4.then(f => f());
             unlisten5.then(f => f());
         };
-    }, [waypoints, tripTitle, openModal]); // Re-run if these change
+    }, [waypoints, tripTitle, tripSummary, openModal]); // Re-run if these change
 
     useEffect(() => {
         const calculateTrip = async () => {
@@ -187,22 +195,22 @@ export function useTrip() {
                 const dailyRoutes = [];
                 let totalDist = 0;
                 let totalTime = 0;
-                
+
                 for (let d = 1; d <= maxDay; d++) {
                     // Find waypoints prior to day `d` to connect the route from the last point of the previous days
                     const prevDayWaypoints = waypoints
                         .filter(w => (w.day || 1) < d)
                         .sort((a, b) => (a.day || 1) - (b.day || 1) || (a.stopIndex || 0) - (b.stopIndex || 0));
-                    
+
                     const lastPrevWaypoint = prevDayWaypoints.length > 0 ? prevDayWaypoints[prevDayWaypoints.length - 1] : null;
 
                     const dayWaypoints = waypoints
                         .filter(w => (w.day || 1) === d)
                         .sort((a, b) => (a.stopIndex || 0) - (b.stopIndex || 0));
-                    
+
                     // Prepend the last stop from the previous day so the line is continuous
-                    const routePointsForDay = lastPrevWaypoint && dayWaypoints.length > 0 
-                        ? [lastPrevWaypoint, ...dayWaypoints] 
+                    const routePointsForDay = lastPrevWaypoint && dayWaypoints.length > 0
+                        ? [lastPrevWaypoint, ...dayWaypoints]
                         : dayWaypoints;
 
                     if (routePointsForDay.length >= 2) {
@@ -215,7 +223,7 @@ export function useTrip() {
                         totalTime += result.stats.duration;
                     }
                 }
-                
+
                 setRouteShape(dailyRoutes);
                 setStats({ distance: totalDist, duration: totalTime });
             } catch (e) { console.error(e); }
@@ -263,6 +271,8 @@ export function useTrip() {
         showLoadTripModal,
         setShowLoadTripModal,
         currentDay,
-        setCurrentDay
+        setCurrentDay,
+        tripSummary,
+        setTripSummary
     };
 }

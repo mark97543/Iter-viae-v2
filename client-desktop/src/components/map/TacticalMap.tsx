@@ -109,7 +109,7 @@ function TacticalMap() {
         // The data is already formatted and ready from useTrip() - now it's an array of daily routes
         const geojsonData: GeoJSON.FeatureCollection = {
             type: 'FeatureCollection',
-            features: routeShape.map(dayRoute => ({
+            features: routeShape.map((dayRoute: { day: number, routeShape: any[] }) => ({
                 type: 'Feature',
                 properties: {
                     day: dayRoute.day,
