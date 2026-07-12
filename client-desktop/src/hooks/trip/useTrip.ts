@@ -15,6 +15,7 @@ export function useTrip() {
     const [waypoints, setWaypoints] = useState<Waypoint[]>([]);
     const [routeShape, setRouteShape] = useState<any[]>([]);
     const [stats, setStats] = useState({ distance: 0, duration: 0 });
+    const [legStats, setLegStats] = useState<any[]>([]);
     const [tripTitle, setTripTitle] = useState('');
     const { openModal } = useModal();
     const [showLoadTripModal, setShowLoadTripModal] = useState(false);
@@ -196,6 +197,7 @@ export function useTrip() {
             if (waypoints.length < 2) {
                 setRouteShape([]);
                 setStats({ distance: 0, duration: 0 });
+                setLegStats([]);
                 return;
             }
             try {
@@ -203,6 +205,7 @@ export function useTrip() {
                 const dailyRoutes = [];
                 let totalDist = 0;
                 let totalTime = 0;
+                let allLegStats: any[] = [];
 
                 for (let d = 1; d <= maxDay; d++) {
                     // Find waypoints prior to day `d` to connect the route from the last point of the previous days
@@ -229,12 +232,22 @@ export function useTrip() {
                         });
                         totalDist += result.stats.distance;
                         totalTime += result.stats.duration;
+                        
+                        if (result.legStats) {
+                            allLegStats.push(...result.legStats);
+                        }
                     }
                 }
 
                 setRouteShape(dailyRoutes);
                 setStats({ distance: totalDist, duration: totalTime });
-            } catch (e) { console.error(e); }
+                setLegStats(allLegStats);
+            } catch (err) {
+                console.error("Failed to calculate trip routes:", err);
+                setRouteShape([]);
+                setStats({ distance: 0, duration: 0 });
+                setLegStats([]);
+            }
         };
         calculateTrip();
     }, [waypoints]);
@@ -271,6 +284,7 @@ export function useTrip() {
         setWaypoints,
         routeShape,
         stats,
+        legStats,
         addWaypoint,
         deleteWaypoint,
         moveWaypoint,

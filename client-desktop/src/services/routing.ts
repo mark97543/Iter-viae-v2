@@ -27,8 +27,13 @@ export const RoutingService = {
             if (response && response.trip && response.trip.legs) {
                 // Normalize the response from Valhalla/Tauri
                 let combinedCoordinates: any[] = [];
+                let legStats: any[] = [];
                 response.trip.legs.forEach((leg: any) => {
                     combinedCoordinates.push(...decodePolyline6(leg.shape));
+                    legStats.push({
+                        distance: leg.summary?.length || 0,
+                        duration: leg.summary?.time || 0
+                    });
                 });
                 
                 // Deduplicate to prevent MapLibre WebGL crashes on identical points
@@ -43,20 +48,23 @@ export const RoutingService = {
                     stats: {
                         distance: response.trip.summary.length,
                         duration: response.trip.summary.time
-                    }
+                    },
+                    legStats
                 };
             } else {
                 console.warn("Valhalla returned no valid route. Falling back to straight lines.", response);
                 return {
                     routeShape: straightLineShape,
-                    stats: { distance: 0, duration: 0 }
+                    stats: { distance: 0, duration: 0 },
+                    legStats: []
                 };
             }
         } catch (error) {
             console.error("RoutingService failed. Falling back to straight lines.", error);
             return {
                 routeShape: straightLineShape,
-                stats: { distance: 0, duration: 0 }
+                stats: { distance: 0, duration: 0 },
+                legStats: []
             };
         }
     }
