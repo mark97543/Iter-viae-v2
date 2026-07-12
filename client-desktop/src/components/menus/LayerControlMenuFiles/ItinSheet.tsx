@@ -5,7 +5,16 @@ import { Waypoint } from "../../../types/waypoints";
 
 
 const ItinSheet = ({ visible }: { visible: boolean }) => {
-    const { tripTitle, tripSummary, setTripSummary, waypoints, setWaypoints } = useTripContext();
+    const { tripTitle,
+        tripSummary,
+        setTripSummary,
+        waypoints,
+        setWaypoints,
+        tripStartTime,
+        setTripStartTime,
+        tripDate,
+        setTripDate
+    } = useTripContext();
 
     if (!visible) return null;
 
@@ -39,17 +48,46 @@ const ItinSheet = ({ visible }: { visible: boolean }) => {
                 overflow-y-scroll
                 '
         >
-            <div className="border-b border-neutral-800 pb-4 shrink-0">
+            <div className="border-b border-neutral-800 pb-5 shrink-0 flex flex-col gap-4">
                 <h1 className='text-sm font-bold tracking-widest uppercase text-neutral-400'>
                     Summary for {tripTitle || 'Trip'}
                 </h1>
+
                 <textarea
                     value={tripSummary}
                     onChange={(e) => setTripSummary(e.target.value)}
-                    className='w-full mt-3 bg-neutral-900 border border-neutral-800 rounded-lg p-3 text-neutral-300 text-sm focus:outline-none focus:border-tactical-red transition-colors resize-none custom-scrollbar'
-                    placeholder="Trip Summary"
-                    rows={8}
+                    className='w-full bg-black/40 border border-white/10 hover:border-white/20 rounded-xl p-3 text-neutral-300 text-sm focus:outline-none focus:border-tactical-red focus:ring-1 focus:ring-tactical-red/50 transition-all resize-none custom-scrollbar shadow-inner'
+                    placeholder="Enter a description or summary of your trip..."
+                    rows={4}
                 />
+
+                <div className="flex gap-4">
+                    <div className="flex-1 flex flex-col gap-1.5">
+                        <label className="text-xs font-semibold text-neutral-500 uppercase tracking-wider pl-1">Start Date</label>
+                        <input
+                            type="date"
+                            value={tripDate ? new Date(tripDate).toISOString().split('T')[0] : ''}
+                            onChange={(e) => {
+                                // Create a new date from the string, set it as an object
+                                const newDate = new Date(e.target.value);
+                                setTripDate(newDate);
+                                e.target.blur(); // Force close the native picker
+                            }}
+                            className='w-full bg-black/40 border border-white/10 hover:border-white/20 rounded-xl p-3 text-neutral-300 text-sm focus:outline-none focus:border-tactical-red focus:ring-1 focus:ring-tactical-red/50 transition-all shadow-inner [color-scheme:dark]'
+                        />
+                    </div>
+                    <div className="flex-1 flex flex-col gap-1.5">
+                        <label className="text-xs font-semibold text-neutral-500 uppercase tracking-wider pl-1">Start Time</label>
+                        <input
+                            type="time"
+                            value={tripStartTime || '00:00'}
+                            onChange={(e) => {
+                                setTripStartTime(e.target.value as any);
+                            }}
+                            className='w-full bg-black/40 border border-white/10 hover:border-white/20 rounded-xl p-3 text-neutral-300 text-sm focus:outline-none focus:border-tactical-red focus:ring-1 focus:ring-tactical-red/50 transition-all shadow-inner [color-scheme:dark]'
+                        />
+                    </div>
+                </div>
             </div>
 
             <div className="flex-1 overflow-y-auto custom-scrollbar pr-4 space-y-6">
@@ -78,7 +116,7 @@ const ItinSheet = ({ visible }: { visible: boolean }) => {
                                                     transition-colors mb-2'
                                                 value={wp.name}
                                                 onChange={(e) => {
-                                                    setWaypoints(waypoints.map((w: Waypoint) => 
+                                                    setWaypoints(waypoints.map((w: Waypoint) =>
                                                         w.id === wp.id ? { ...w, name: e.target.value } : w
                                                     ));
                                                 }}
@@ -93,7 +131,7 @@ const ItinSheet = ({ visible }: { visible: boolean }) => {
                                                 placeholder="Add a note..."
                                                 value={wp.note || ''}
                                                 onChange={(e) => {
-                                                    setWaypoints(waypoints.map((w: Waypoint) => 
+                                                    setWaypoints(waypoints.map((w: Waypoint) =>
                                                         w.id === wp.id ? { ...w, note: e.target.value } : w
                                                     ));
                                                 }}

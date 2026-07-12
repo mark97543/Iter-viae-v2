@@ -20,6 +20,8 @@ export function useTrip() {
     const [showLoadTripModal, setShowLoadTripModal] = useState(false);
     const [currentDay, setCurrentDay] = useState(1);
     const [tripSummary, setTripSummary] = useState('');
+    const [tripStartTime, setTripStartTime] = useState<Date | null>(null);
+    const [tripDate, setTripDate] = useState<Date | null>(null);
 
 
     //Data Package
@@ -27,6 +29,8 @@ export function useTrip() {
         const dataToSave = JSON.stringify({
             title: tripTitle,
             summary: tripSummary,
+            date: tripDate,
+            startTime: tripStartTime,
             waypoints: waypoints
         });
         return dataToSave;
@@ -38,6 +42,8 @@ export function useTrip() {
         setWaypoints([]);
         setTripTitle("");
         setTripSummary("");
+        setTripStartTime(null);
+        setTripDate(null);
     }
 
     //Save Trip Function
@@ -163,6 +169,8 @@ export function useTrip() {
                     const parsedData = JSON.parse(fileContent);
                     setWaypoints(parsedData.waypoints);
                     setTripTitle(parsedData.title);
+                    setTripDate(parsedData.date);
+                    setTripStartTime(parsedData.startTime);
                     setTripSummary(parsedData.summary);
 
                     console.log("Trip Loaded Successfully!")
@@ -181,7 +189,7 @@ export function useTrip() {
             unlisten4.then(f => f());
             unlisten5.then(f => f());
         };
-    }, [waypoints, tripTitle, tripSummary, openModal]); // Re-run if these change
+    }, [waypoints, tripTitle, tripSummary, tripDate, tripStartTime, openModal]); // Re-run if these change
 
     useEffect(() => {
         const calculateTrip = async () => {
@@ -273,6 +281,10 @@ export function useTrip() {
         currentDay,
         setCurrentDay,
         tripSummary,
-        setTripSummary
+        setTripSummary,
+        tripStartTime,
+        setTripStartTime,
+        tripDate,
+        setTripDate,
     };
 }
