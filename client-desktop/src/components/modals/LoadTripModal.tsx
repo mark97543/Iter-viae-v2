@@ -81,6 +81,7 @@ const LoadTripModal = () => {
                                             setTripDate(parsedData.date ? new Date(parsedData.date) : null);
                                             setTripStartTime(parsedData.startTime || null);
                                             setShowLoadTripModal(false);
+
                                         } catch (err) {
                                             console.error("Failed to load trip data:", err);
                                         }

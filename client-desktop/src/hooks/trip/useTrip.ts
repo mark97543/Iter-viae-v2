@@ -9,7 +9,7 @@ import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
 import { useModal } from "../../context/ModalContext";
 import { save, open } from "@tauri-apps/plugin-dialog";
-import { Waypoint, createDefaultWaypoint } from "../../types/waypoints";
+import { Waypoint, createDefaultWaypoint, Day_Start_Time, createDefaultDayStartTime } from "../../types/waypoints";
 
 export function useTrip() {
     const [waypoints, setWaypoints] = useState<Waypoint[]>([]);
@@ -23,6 +23,8 @@ export function useTrip() {
     const [tripSummary, setTripSummary] = useState('');
     const [tripStartTime, setTripStartTime] = useState<Date | null>(null);
     const [tripDate, setTripDate] = useState<Date | null>(null);
+    const [dayStartTimes, setDayStartTimes] = useState<Date[]>([]);
+
 
 
     //Data Package
@@ -32,6 +34,7 @@ export function useTrip() {
             summary: tripSummary,
             date: tripDate,
             startTime: tripStartTime,
+            dayStartTimes: dayStartTimes,
             waypoints: waypoints
         });
         return dataToSave;
@@ -45,6 +48,7 @@ export function useTrip() {
         setTripSummary("");
         setTripStartTime(null);
         setTripDate(null);
+        setDayStartTimes([]);
     }
 
     //Save Trip Function
@@ -173,6 +177,7 @@ export function useTrip() {
                     setTripDate(parsedData.date);
                     setTripStartTime(parsedData.startTime);
                     setTripSummary(parsedData.summary);
+                    setDayStartTimes(parsedData.dayStartTimes);
 
                     console.log("Trip Loaded Successfully!")
                 } catch (err) {
@@ -190,7 +195,7 @@ export function useTrip() {
             unlisten4.then(f => f());
             unlisten5.then(f => f());
         };
-    }, [waypoints, tripTitle, tripSummary, tripDate, tripStartTime, openModal]); // Re-run if these change
+    }, [waypoints, tripTitle, tripSummary, tripDate, tripStartTime, dayStartTimes, openModal]); // Re-run if these change
 
     useEffect(() => {
         const calculateTrip = async () => {
@@ -232,7 +237,7 @@ export function useTrip() {
                         });
                         totalDist += result.stats.distance;
                         totalTime += result.stats.duration;
-                        
+
                         if (result.legStats) {
                             allLegStats.push(...result.legStats);
                         }
