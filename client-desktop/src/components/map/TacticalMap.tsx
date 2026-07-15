@@ -11,6 +11,7 @@ import AddPoint from '../menus/AddPoint';
 import { WaypointLayer } from './WaypointLayer';
 import { useTripContext } from '../../context/TripContext';
 import { useMapController } from '../../hooks/map/useMapController';
+import SearchBar from '../search/SearchBar';
 
 function TacticalMap() {
     const { mapContainer, map, isReady } = useMapController();
@@ -137,8 +138,8 @@ function TacticalMap() {
                 source: SOURCE_ID,
                 filter: ['!=', ['get', 'isCurrentDay'], true],
                 layout: { 'line-join': 'round', 'line-cap': 'round' },
-                paint: { 
-                    'line-color': '#ff4444', 
+                paint: {
+                    'line-color': '#ff4444',
                     'line-width': 4,
                     'line-dasharray': [2, 2],
                     'line-opacity': 0.5
@@ -203,6 +204,7 @@ function TacticalMap() {
                 waypoints={waypoints}
                 onWaypointMove={moveWaypoint}
             />
+            <SearchBar />
 
 
         </div>
