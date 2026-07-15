@@ -9,47 +9,37 @@ import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
 import { useModal } from "../../context/ModalContext";
 import { save, open } from "@tauri-apps/plugin-dialog";
-import { Waypoint, createDefaultWaypoint, Day_Start_Time, createDefaultDayStartTime } from "../../types/waypoints";
+import { useTripState } from "./SubHooks/useTripState";
 
 export function useTrip() {
-    const [waypoints, setWaypoints] = useState<Waypoint[]>([]);
+    const {
+        waypoints,
+        setWaypoints,
+        tripTitle,
+        setTripTitle,
+        tripSummary,
+        setTripSummary,
+        tripDate,
+        setTripDate,
+        tripStartTime,
+        setTripStartTime,
+        dayStartTimes,
+        setDayStartTimes,
+        currentDay,
+        setCurrentDay,
+        addWaypoint,
+        deleteWaypoint,
+        moveWaypoint,
+        clear_trip,
+        data_package
+    } = useTripState();
+
+
     const [routeShape, setRouteShape] = useState<any[]>([]);
     const [stats, setStats] = useState({ distance: 0, duration: 0 });
     const [legStats, setLegStats] = useState<any[]>([]);
-    const [tripTitle, setTripTitle] = useState('');
     const { openModal } = useModal();
     const [showLoadTripModal, setShowLoadTripModal] = useState(false);
-    const [currentDay, setCurrentDay] = useState(1);
-    const [tripSummary, setTripSummary] = useState('');
-    const [tripStartTime, setTripStartTime] = useState<Date | null>(null);
-    const [tripDate, setTripDate] = useState<Date | null>(null);
-    const [dayStartTimes, setDayStartTimes] = useState<Date[]>([]);
-
-
-
-    //Data Package
-    function data_package() {
-        const dataToSave = JSON.stringify({
-            title: tripTitle,
-            summary: tripSummary,
-            date: tripDate,
-            startTime: tripStartTime,
-            dayStartTimes: dayStartTimes,
-            waypoints: waypoints
-        });
-        return dataToSave;
-    }
-
-    //clearing Cunction
-
-    function clear_trip() {
-        setWaypoints([]);
-        setTripTitle("");
-        setTripSummary("");
-        setTripStartTime(null);
-        setTripDate(null);
-        setDayStartTimes([]);
-    }
 
     //Save Trip Function
     const save_trip = async () => {
@@ -257,32 +247,7 @@ export function useTrip() {
         calculateTrip();
     }, [waypoints]);
 
-    const addWaypoint = (poi: any) => {
-        setWaypoints(prev => {
-            // Calculate the next stop index for the current day
-            const waypointsForDay = prev.filter(wp => wp.day === currentDay);
-            const nextStopIndex = waypointsForDay.length > 0
-                ? Math.max(...waypointsForDay.map(wp => wp.stopIndex || 0)) + 1
-                : 0;
 
-            const newWaypoint = createDefaultWaypoint(poi.coord, poi.type);
-
-            return [...prev, {
-                ...newWaypoint,
-                ...poi,
-                day: currentDay,
-                stopIndex: nextStopIndex
-            }];
-        });
-    };
-
-    const deleteWaypoint = (id: string) => {
-        setWaypoints(prev => prev.filter(wp => wp.id !== id));
-    };
-
-    const moveWaypoint = (id: string, newCoords: { lat: number, lng: number }) => {
-        setWaypoints(prev => prev.map(wp => wp.id === id ? { ...wp, coord: newCoords } : wp));
-    };
 
     return {
         waypoints,
