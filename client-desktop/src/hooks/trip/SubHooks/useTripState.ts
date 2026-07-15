@@ -1,3 +1,4 @@
+// src/hooks/trip/SubHooks/useTripState.ts
 /**
  * useTripState.ts
  * @file This hook is responsible for maintaining the core data of a trip. 
