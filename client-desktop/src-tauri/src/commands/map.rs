@@ -111,6 +111,42 @@ pub fn delete_routing_graph(app: AppHandle) -> Result<(), String> {
 }
 
 #[tauri::command]
+pub fn check_gazetteer(app: AppHandle, gazetteer_url: String) -> LocalMapStatus {
+    let gazetteer_name = match get_filename_from_url(&gazetteer_url) {
+        Ok(name) => name,
+        Err(_) => return LocalMapStatus { is_found: false, file_name: None, date: None },
+    };
+
+    let maps_dir = app.path().app_data_dir().unwrap().join("maps");
+
+    if maps_dir.join(&gazetteer_name).exists() {
+        let date = gazetteer_name.split('-').nth(1).and_then(|p| p.split('_').next()).map(|s| s.to_string());
+        LocalMapStatus {
+            is_found: true,
+            file_name: Some(gazetteer_name),
+            date,
+        }
+    } else {
+        LocalMapStatus { is_found: false, file_name: None, date: None }
+    }
+}
+
+#[tauri::command]
+pub fn delete_gazetteer(app: AppHandle) -> Result<(), String> {
+    let maps_dir = app.path().app_data_dir().map_err(|e| e.to_string())?.join("maps");
+    
+    if let Ok(paths) = fs::read_dir(&maps_dir) {
+        for entry in paths.filter_map(|e| e.ok()) {
+            let file_name = entry.file_name().to_string_lossy().into_owned();
+            if file_name.ends_with("_gazetteer.db") {
+                let _ = fs::remove_file(entry.path());
+            }
+        }
+    }
+    Ok(())
+}
+
+#[tauri::command]
 pub fn list_maps(app: tauri::AppHandle) -> Vec<String> {
     let mut maps_dir = match app.path().app_data_dir() {
         Ok(dir) => dir,

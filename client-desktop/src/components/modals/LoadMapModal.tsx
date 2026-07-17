@@ -159,6 +159,129 @@ function GlobalRoutingBar({ routingUrl, onDownloadStart, onDownloadEnd }: { rout
 }
 
 // ==========================================
+// GLOBAL GAZETTEER BAR COMPONENT
+// ==========================================
+function GlobalGazetteerBar({ gazetteerUrl, onDownloadStart, onDownloadEnd }: { gazetteerUrl: string; onDownloadStart: () => void; onDownloadEnd: () => void; }) {
+    const [status, setStatus] = useState<"DOWNLOAD" | "UPDATE" | "READY" | "DOWNLOADING">("DOWNLOAD");
+    const [progress, setProgress] = useState(0);
+
+    const gazetteerName = gazetteerUrl.split('/').pop() || "";
+    const targetDate = gazetteerName.split('-')[1]?.split('_')[0] || "";
+
+    useEffect(() => {
+        const unlisten = listen<DownloadProgress>('download-progress', (event) => {
+            if (event.payload.file_name === gazetteerName) {
+                setProgress(event.payload.percentage);
+                if (event.payload.percentage >= 100) {
+                    setStatus("READY");
+                    onDownloadEnd();
+                }
+            }
+        });
+
+        const fetchStatus = async () => {
+            try {
+                const res = await invoke<LocalMapStatus>("check_gazetteer", { gazetteerUrl });
+                if (!res.is_found) {
+                    setStatus("DOWNLOAD");
+                } else if (res.date && targetDate && res.date < targetDate) {
+                    setStatus("UPDATE");
+                } else {
+                    setStatus("READY");
+                }
+            } catch {
+                setStatus("DOWNLOAD");
+            }
+        };
+
+        fetchStatus();
+        return () => { unlisten.then(f => f()); };
+    }, [gazetteerUrl, gazetteerName, targetDate]);
+
+    const handleAction = async (action: "DOWNLOAD" | "UPDATE" | "DELETE") => {
+        if (action !== "DELETE") {
+            setStatus("DOWNLOADING");
+            onDownloadStart();
+        }
+        setProgress(0);
+
+        try {
+            if (action === "UPDATE") {
+                await invoke("delete_gazetteer");
+                await invoke("download_map", { url: gazetteerUrl });
+            }
+            else if (action === "DELETE") {
+                await invoke("delete_gazetteer");
+                setStatus("DOWNLOAD");
+                await emit('map-downloaded');
+            }
+            else {
+                await invoke("download_map", { url: gazetteerUrl });
+            }
+
+            if (action !== "DELETE") {
+                await emit('map-downloaded');
+            }
+        } catch (e) {
+            console.error("Global gazetteer action failed:", e);
+            setStatus("DOWNLOAD");
+        }
+    };
+
+    return (
+        <div className="bg-neutral-900 border-b border-neutral-800 p-4 flex justify-between items-center px-6">
+            <div>
+                <h3 className="text-white font-bold tracking-wide flex items-center gap-2">
+                    <span className="text-blue-400">🔍</span> Offline Search Gazetteer
+                </h3>
+                <p className="text-gray-400 text-xs mt-1 max-w-lg">
+                    Provides offline search capability for places and addresses.
+                </p>
+            </div>
+            
+            <div className="min-w-[250px] flex justify-end">
+                {status === "DOWNLOADING" ? (
+                    <div className="w-full max-w-[200px]">
+                        <div className="flex justify-between items-center mb-1">
+                            <span className="text-xs text-gray-400 font-mono tracking-wider">DOWNLOADING...</span>
+                            <span className="text-xs text-blue-400 font-mono">{progress}%</span>
+                        </div>
+                        <div className="w-full bg-gray-800 rounded-full h-2 border border-gray-700">
+                            <div className="bg-blue-500 h-2 rounded-full transition-all duration-300" style={{ width: `${progress}%` }}></div>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="flex items-center gap-3">
+                        {status === "READY" ? (
+                            <span className="px-3 py-1 bg-green-900/30 text-green-400 border border-green-800/50 rounded-md text-xs font-bold uppercase tracking-wider flex items-center gap-2">
+                                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                                Installed
+                            </span>
+                        ) : (
+                            <button
+                                onClick={() => handleAction(status === "UPDATE" ? "UPDATE" : "DOWNLOAD")}
+                                className="px-4 py-1.5 bg-blue-600/80 hover:bg-blue-600 text-white rounded text-sm font-bold uppercase tracking-wide transition-colors shadow-lg shadow-blue-900/20"
+                            >
+                                {status === "UPDATE" ? "UPDATE SEARCH" : "DOWNLOAD SEARCH"}
+                            </button>
+                        )}
+
+                        {status !== "DOWNLOAD" && (
+                            <button
+                                onClick={() => handleAction("DELETE")}
+                                className="px-3 py-1.5 text-xs text-gray-400 hover:text-red-400 border border-transparent hover:border-red-900/50 hover:bg-red-900/20 rounded transition-all"
+                            >
+                                Delete
+                            </button>
+                        )}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
+// ==========================================
 // INDIVIDUAL MAP ROW COMPONENT (VISUALS ONLY)
 // ==========================================
 function MapRow({ map, onDownloadStart, onDownloadEnd }: { map: MapRegion; onDownloadStart: () => void; onDownloadEnd: () => void; }) {
@@ -316,6 +439,20 @@ export default function LoadMapModal({ onClose }: ModalProps) {
         return url;
     }, [mapData]);
 
+    const globalGazetteerUrl = useMemo(() => {
+        if (mapData.length === 0) return null;
+        const url = mapData[0].Routing_URL;
+        const urlParts = url.split('/');
+        const filename = urlParts.pop() || "";
+        const parts = filename.split('-');
+        if (parts.length > 1) {
+            const date = parts[1].split('_')[0]; // Extracting just the date
+            urlParts.push(`us-${date}_gazetteer.db`);
+            return urlParts.join('/');
+        }
+        return null;
+    }, [mapData]);
+
     return (
         <div className='fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm'>
             <div className='flex flex-col bg-canvas-panel border border-neutral-800 w-[90%] max-w-4xl h-[85vh] rounded-xl shadow-2xl overflow-hidden'>
@@ -335,6 +472,15 @@ export default function LoadMapModal({ onClose }: ModalProps) {
                 {!isLoading && globalRoutingUrl && (
                     <GlobalRoutingBar 
                         routingUrl={globalRoutingUrl} 
+                        onDownloadStart={() => setActiveDownloads(prev => prev + 1)}
+                        onDownloadEnd={() => setActiveDownloads(prev => prev - 1)}
+                    />
+                )}
+
+                {/* Global Gazetteer Bar */}
+                {!isLoading && globalGazetteerUrl && (
+                    <GlobalGazetteerBar 
+                        gazetteerUrl={globalGazetteerUrl} 
                         onDownloadStart={() => setActiveDownloads(prev => prev + 1)}
                         onDownloadEnd={() => setActiveDownloads(prev => prev - 1)}
                     />

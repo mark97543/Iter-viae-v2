@@ -15,6 +15,8 @@ macro_rules! generate_commands {
             crate::commands::map::delete_old_region_visuals,
             crate::commands::map::check_routing_graph,
             crate::commands::map::delete_routing_graph,
+            crate::commands::map::check_gazetteer,
+            crate::commands::map::delete_gazetteer,
             crate::commands::routing::calculate_route,
             crate::storage::open_data_folder,
             crate::storage::save_route,
