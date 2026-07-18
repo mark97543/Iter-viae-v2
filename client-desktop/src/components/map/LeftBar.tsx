@@ -164,13 +164,13 @@ function SortableWaypoint({ point, index, editingId, setEditingId }: { point: an
             ref={setNodeRef}
             style={style}
             {...attributes}
-            className="group grid grid-cols-[36px_1fr_auto] gap-x-3 items-center bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/20 p-3 rounded-xl transition-all duration-300 backdrop-blur-sm"
+            className="group grid grid-cols-[36px_1fr_auto] gap-x-3 items-center bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/20 p-3 rounded-xl transition-colors duration-300 backdrop-blur-sm"
         >
             <div
                 {...listeners}
                 className="w-8 h-8 row-span-2 self-center shrink-0 flex items-center justify-center bg-gradient-to-b from-neutral-800 to-neutral-900 border border-white/10 rounded-full text-xs font-mono font-bold text-white shadow-lg group-hover:border-blue-500/50 group-hover:shadow-[0_0_15px_rgba(59,130,246,0.2)] transition-all cursor-grab active:cursor-grabbing touch-none"
             >
-                {index + 1}
+                {index}
             </div>
             <span className="text-sm font-semibold text-white row-start-1 row-end-1 col-start-2 col-end-2 flex items-center pr-2">
                 {isEditing ? (

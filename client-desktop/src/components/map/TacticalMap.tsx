@@ -204,8 +204,37 @@ function TacticalMap() {
                 waypoints={waypoints}
                 onWaypointMove={moveWaypoint}
             />
-            <SearchBar />
+            <SearchBar 
+                map={map}
+                onResultSelect={(res: any) => {
+                    // Fly map
+                    map?.flyTo({ center: [res.lon, res.lat], zoom: 14 });
 
+                    // Drop pin
+                    if (draftMarkerRef.current) {
+                        draftMarkerRef.current.remove();
+                    }
+                    draftMarkerRef.current = new maplibregl.Marker({
+                        color: '#D32F2F',
+                        draggable: true
+                    })
+                        .setLngLat([res.lon, res.lat])
+                        .addTo(map!);
+
+                    // Show MenuCard
+                    setClickedPoi({
+                        prop: {
+                            properties: {
+                                name: res.name,
+                                subclass: res.city || 'Search Result'
+                            }
+                        },
+                        coord: { lng: res.lon, lat: res.lat }
+                    });
+                    
+                    setAddPoint(false);
+                }}
+            />
 
         </div>
     );
