@@ -1,11 +1,11 @@
-import { Waypoint } from "../../types/waypoints";
+import { Waypoint, WAYPOINT_CONFIG } from "../../types/waypoints";
 import { useEffect, useRef } from "react";
 import maplibregl from "maplibre-gl";
 
 interface WaypointLayerProps {
     map: maplibregl.Map;
     waypoints: Waypoint[];
-    onWaypointMove?: (id: string, newLngLat: {lng: number, lat: number}) => void;
+    onWaypointMove?: (id: string, newLngLat: { lng: number, lat: number }) => void;
 }
 
 export const WaypointLayer = ({ map, waypoints, onWaypointMove }: WaypointLayerProps) => {
@@ -51,13 +51,13 @@ export const WaypointLayer = ({ map, waypoints, onWaypointMove }: WaypointLayerP
                     return {
                         type: 'Feature',
                         geometry: { type: 'Point', coordinates: [e.lngLat.lng, e.lngLat.lat] },
-                        properties: { id: wp.id, name: wp.name }
+                        properties: { id: wp.id, name: wp.name, type: wp.type }
                     };
                 }
                 return {
                     type: 'Feature',
                     geometry: { type: 'Point', coordinates: [wp.coord.lng, wp.coord.lat] },
-                    properties: { id: wp.id, name: wp.name }
+                    properties: { id: wp.id, name: wp.name, type: wp.type }
                 };
             });
 
@@ -119,15 +119,52 @@ export const WaypointLayer = ({ map, waypoints, onWaypointMove }: WaypointLayerP
                     data: { type: 'FeatureCollection', features: [] }
                 });
 
+                Object.values(WAYPOINT_CONFIG).forEach(config => {
+                    // Use a unique ID that includes the color in case different types share the same pin image
+                    const imageId = `${config.pin}-${config.color}`;
+                    
+                    if (!map.hasImage(imageId)) {
+                        fetch(`/assets/${config.pin}`)
+                            .then(res => res.text())
+                            .then(svgText => {
+                                // Replace currentColor with the waypoint color
+                                const coloredSvg = svgText.replace(/currentColor/g, config.color);
+                                const blob = new Blob([coloredSvg], { type: 'image/svg+xml' });
+                                const url = URL.createObjectURL(blob);
+                                
+                                const img = new Image();
+                                img.onload = () => {
+                                    if (!map.hasImage(imageId)) {
+                                        map.addImage(imageId, img);
+                                    }
+                                    URL.revokeObjectURL(url);
+                                };
+                                img.onerror = (err) => console.error('Failed to load image', config.pin, err);
+                                img.src = url;
+                            })
+                            .catch(err => console.error('Failed to fetch SVG', config.pin, err));
+                    }
+                });
+
                 map.addLayer({
                     id: CIRCLE_LAYER_ID,
-                    type: 'circle',
+                    type: 'symbol',
                     source: SOURCE_ID,
-                    paint: {
-                        'circle-radius': 6,
-                        'circle-color': '#DC2626',
-                        'circle-stroke-width': 2,
-                        'circle-stroke-color': '#FFFFFF'
+                    layout: {
+                        'icon-image': [
+                            'match',
+                            ['get', 'type'],
+                            'START', `${WAYPOINT_CONFIG.START.pin}-${WAYPOINT_CONFIG.START.color}`,
+                            'FINISH', `${WAYPOINT_CONFIG.FINISH.pin}-${WAYPOINT_CONFIG.FINISH.color}`,
+                            'FUEL', `${WAYPOINT_CONFIG.FUEL.pin}-${WAYPOINT_CONFIG.FUEL.color}`,
+                            'LODGING', `${WAYPOINT_CONFIG.LODGING.pin}-${WAYPOINT_CONFIG.LODGING.color}`,
+                            'SHAPE', `${WAYPOINT_CONFIG.SHAPE.pin}-${WAYPOINT_CONFIG.SHAPE.color}`,
+                            'ATTRACTION', `${WAYPOINT_CONFIG.ATTRACTION.pin}-${WAYPOINT_CONFIG.ATTRACTION.color}`,
+                            'FOOD', `${WAYPOINT_CONFIG.FOOD.pin}-${WAYPOINT_CONFIG.FOOD.color}`,
+                            `${WAYPOINT_CONFIG.WAYPOINT.pin}-${WAYPOINT_CONFIG.WAYPOINT.color}` // Fallback default
+                        ],
+                        'icon-size': 1.15,
+                        'icon-allow-overlap': true
                     }
                 });
 
@@ -196,7 +233,7 @@ export const WaypointLayer = ({ map, waypoints, onWaypointMove }: WaypointLayerP
                 features: waypoints.map(wp => ({
                     type: 'Feature',
                     geometry: { type: 'Point', coordinates: [wp.coord.lng, wp.coord.lat] },
-                    properties: { id: wp.id, name: wp.name }
+                    properties: { id: wp.id, name: wp.name, type: wp.type }
                 }))
             });
         }

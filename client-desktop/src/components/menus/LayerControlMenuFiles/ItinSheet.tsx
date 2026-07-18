@@ -1,7 +1,7 @@
 // src/components/menus/LayerControlMenuFiles/ItinSheet.tsx
 
 import { useTripContext } from "../../../context/TripContext";
-import { Waypoint } from "../../../types/waypoints";
+import { Waypoint, WAYPOINT_CONFIG, WaypointType } from "../../../types/waypoints";
 import Header from "./ItinSheet Components/Header";
 
 
@@ -143,22 +143,51 @@ const ItinSheet = ({ visible }: { visible: boolean }) => {
                             <div className="flex flex-col gap-3 pl-2">
                                 {dayWaypoints.length > 0 ? (
                                     dayWaypoints.map((wp: Waypoint, index: number) => (
-                                        <div key={wp.id} className="relative pl-4 border-l border-neutral-700">
+                                        <div
+                                            key={wp.id}
+                                            className="relative pl-4 border-l-2"
+                                            style={{ borderColor: WAYPOINT_CONFIG[wp.type].color }}
+                                        >
                                             {/* Small dot on the timeline */}
-                                            <div className="absolute left-[-5px] top-1.5 w-2 h-2 rounded-full bg-neutral-600 border-2 border-neutral-900" />
-                                            <input
-                                                className='
-                                                    w-full bg-neutral-900 border border-neutral-800 
-                                                    rounded-lg p-2 text-neutral-200 text-sm font-medium
-                                                    focus:outline-none focus:border-tactical-red 
-                                                    transition-colors mb-2'
-                                                value={wp.name}
-                                                onChange={(e) => {
-                                                    setWaypoints(waypoints.map((w: Waypoint) =>
-                                                        w.id === wp.id ? { ...w, name: e.target.value } : w
-                                                    ));
-                                                }}
+                                            <div
+                                                className="absolute left-[-5px] top-1.5 w-2 h-2 rounded-full border-2 border-neutral-900"
+                                                style={{ backgroundColor: WAYPOINT_CONFIG[wp.type].color }}
                                             />
+                                            <div className="flex gap-2 mb-2">
+                                                <select
+                                                    className="
+                                                        bg-black/40 border border-white/10 hover:border-white/20
+                                                        rounded-lg p-2 text-neutral-300 text-sm font-medium
+                                                        focus:outline-none focus:border-tactical-red focus:ring-1 focus:ring-tactical-red/50
+                                                        transition-all cursor-pointer [color-scheme:dark] shadow-inner shrink-0"
+                                                    value={wp.type}
+                                                    onChange={(e) => {
+                                                        setWaypoints(waypoints.map((w: Waypoint) =>
+                                                            w.id === wp.id ? { ...w, type: e.target.value as WaypointType } : w
+                                                        ));
+                                                    }}
+                                                    title="Change Stop Type"
+                                                >
+                                                    {Object.entries(WAYPOINT_CONFIG).map(([key, config]) => (
+                                                        <option key={key} value={key} className="bg-neutral-900 text-white">
+                                                            {config.icon} {key}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                                <input
+                                                    className='
+                                                        flex-1 bg-neutral-900 border border-neutral-800 
+                                                        rounded-lg p-2 text-neutral-200 text-sm font-medium
+                                                        focus:outline-none focus:border-tactical-red 
+                                                        transition-colors'
+                                                    value={wp.name}
+                                                    onChange={(e) => {
+                                                        setWaypoints(waypoints.map((w: Waypoint) =>
+                                                            w.id === wp.id ? { ...w, name: e.target.value } : w
+                                                        ));
+                                                    }}
+                                                />
+                                            </div>
                                             <textarea
                                                 className='
                                                     w-full bg-black/40 border border-white/5
